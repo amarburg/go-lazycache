@@ -14,7 +14,22 @@ func MakeTreeHandler( fs *HttpFS ) (TreeHandler) {
   return TreeHandler{ fs: fs }
 }
 
+func (handler TreeHandler) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
+
+  fmt.Println("TreeHandler Handling ", req.URL.String() )
+
+  switch( handler.fs.PathType( req.URL.Path) ) {
+  case Directory:  handler.HandleDirectory( w, req )
+  default: http.Error( w, fmt.Sprintf("Didn't know what to do with: %s", req.URL.Path), 500 )
+  }
+
+}
+
+
 func (handler *TreeHandler) HandleDirectory( w http.ResponseWriter, req *http.Request ) {
+
+  fmt.Println("   Treating", req.URL.Path, "as a directory")
+
   listing,err := handler.fs.ReadHttpDir( req.URL.Path )
 
   if err == nil {
@@ -33,19 +48,8 @@ func (handler *TreeHandler) HandleDirectory( w http.ResponseWriter, req *http.Re
   }
 }
 
-func (handler TreeHandler) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
-
-  switch( handler.fs.PathType( req.URL.Path) ) {
-  case Directory:  handler.HandleDirectory( w, req )
-  default: http.Error( w, fmt.Sprintf("Didn't know what to do with: %s", req.URL.Path), 500 )
-  }
-
-}
 
 
-// func index(w http.ResponseWriter, req *http.Request) {
-//   fmt.Fprintf(w, "<a href=\"rawdata.oceanobservatories.org/\">rawdata.oceanobservatories.org/</a>\n")
-// }
 
 
 // func rawData( w http.ResponseWriter, req *http.Request ) {

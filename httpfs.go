@@ -25,6 +25,9 @@ func OpenHttpFS( uri url.URL ) (*HttpFS, error) {
 }
 
 func (fs *HttpFS ) PathType( path string ) (int) {
+
+fmt.Println("Finding pathType of ", path )
+
   // Pure heuristics right now
   if( trailingSlash.MatchString( path ) ) {
     return Directory
@@ -53,7 +56,7 @@ func (fs *HttpFS ) ReadHttpDir( path string ) (DirListing,error){
   pathUri := fs.Uri
   pathUri.Path += path
 
-fmt.Printf( "Querying: %s\n", pathUri.String() )
+fmt.Printf( "Querying directory: %s\n", pathUri.String() )
 
   response, err := client.Get( pathUri.String() )
 
