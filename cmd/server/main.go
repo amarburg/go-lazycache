@@ -10,6 +10,16 @@ import "github.com/amarburg/go-lazycache"
 
 var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/"
 
+func MungeHostname( hostname string ) []string {
+  splitHN := strings.Split( hostname, "." )
+  fmt.Println(splitHN)
+
+  for i, j := 0, len(splitHN)-1; i < j; i, j = i+1, j-1 {
+      sort.StringSlice(splitHN).Swap(i,j)
+  }
+  return splitHN
+}
+
 func main() {
 
   url,err := url.Parse( OOIRawDataRootURL )
@@ -25,16 +35,10 @@ func main() {
   //http.HandleFunc("*.mov/*", lazycache.MoovHandler )
 
   // Reverse hostname
-  splitHN := strings.Split( fs.Uri.Host, "." )
-  fmt.Println(splitHN)
-
-  for i, j := 0, len(splitHN)-1; i < j; i, j = i+1, j-1 {
-      sort.StringSlice(splitHN).Swap(i,j)
-  }
+  splitHN := MungeHostname( fs.Uri.Host )
 
   root := fmt.Sprintf("/%s%s", strings.Join(splitHN,"/"), fs.Uri.Path )
-fmt.Println(root)
-  http.Handle(root, lazycache.MakeTreeHandler( fs, root ) )
+  http.Handle(root, lazycache.MakeRootNode( fs, root ) )
   http.HandleFunc("/", lazycache.Index )
 
   fmt.Printf("Starting http handler at http://%s/\n", serverAddr)
