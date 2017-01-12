@@ -34,7 +34,7 @@ func main() {
 
   root := fmt.Sprintf("/%s%s", strings.Join(splitHN,"/"), fs.Uri.Path )
 fmt.Println(root)
-  http.Handle(root, lazycache.MakeTreeHandler( fs ) )
+  http.Handle(root, lazycache.MakeTreeHandler( fs, root ) )
   http.HandleFunc("/", lazycache.Index )
 
   fmt.Printf("Starting http handler at http://%s/\n", serverAddr)

@@ -4,33 +4,38 @@ import (
   "fmt"
   "net/http"
   "encoding/json"
+  "strings"
 )
 
 type TreeHandler struct {
+  root string   // For simplicity, root is stored without the trailing slash
   fs *HttpFS
 }
 
-func MakeTreeHandler( fs *HttpFS ) (TreeHandler) {
-  return TreeHandler{ fs: fs }
+func MakeTreeHandler( fs *HttpFS, root string ) (TreeHandler) {
+  return TreeHandler{ fs: fs, root: strings.TrimRight(root,"/") }
 }
 
 func (handler TreeHandler) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
 
   fmt.Println("TreeHandler Handling ", req.URL.String() )
 
-  switch( handler.fs.PathType( req.URL.Path) ) {
-  case Directory:  handler.HandleDirectory( w, req )
+  // Strip path off the Request
+  path := strings.TrimPrefix( req.URL.Path, handler.root )
+
+  switch( handler.fs.PathType( path ) ) {
+  case Directory:  handler.HandleDirectory( w, path )
   default: http.Error( w, fmt.Sprintf("Didn't know what to do with: %s", req.URL.Path), 500 )
   }
 
 }
 
 
-func (handler *TreeHandler) HandleDirectory( w http.ResponseWriter, req *http.Request ) {
+func (handler *TreeHandler) HandleDirectory( w http.ResponseWriter, path string ) {
 
-  fmt.Println("   Treating", req.URL.Path, "as a directory")
+  fmt.Println("   Treating", path, "as a directory")
 
-  listing,err := handler.fs.ReadHttpDir( req.URL.Path )
+  listing,err := handler.fs.ReadHttpDir( path )
 
   if err == nil {
 

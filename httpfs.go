@@ -60,7 +60,10 @@ fmt.Printf( "Querying directory: %s\n", pathUri.String() )
 
   response, err := client.Get( pathUri.String() )
 
-  listing := DirListing{ Path: path }
+  listing := DirListing{ Path: path,
+    Files: make( []string, 0 ),
+    Directories: make([]string,0),
+   }
 
   //fmt.Println( response, err )
 
