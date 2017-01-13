@@ -13,7 +13,7 @@ type HandlerCommon struct {
 
 type Node struct {
   Path, trimPath    string
-  Fs *HttpFs
+  Fs *HttpFS
   children map[string]*Node
   leafFunc func( *Node, http.ResponseWriter, *http.Request )
 }
@@ -31,7 +31,7 @@ var movExtension = regexp.MustCompile(`\.mov$`)
 func (node *Node) handle( path []string, w http.ResponseWriter, req *http.Request ) {
 
   if( len( path ) > 0 ) {
-    fmt.Fprintf( w, "Node: %s\n", node.Path )
+  fmt.Printf( "Node: %s\n", node.Path )
 
     child,ok := node.children[ path[0] ]
     if ok  {
@@ -42,7 +42,7 @@ func (node *Node) handle( path []string, w http.ResponseWriter, req *http.Reques
       newNode.handle( path[1:], w, req )
     }
   } else {
-    fmt.Fprintf(w, "Leaf: %s \n", node.Path)
+    printf("Leaf: %s \n", node.Path)
     if node.leafFunc != nil {
       node.leafFunc( node, w, req )
     }
@@ -53,10 +53,10 @@ func (handle *Node) makeNode( path []string ) (*Node) {
   fmt.Println("Creating node for", path[0] )
 
   trimPath := handle.trimPath + path[0] + "/"
-  path     := handlePath + path[0] + "/",
+  fullPath := handle.Path + path[0] + "/"
   node := Node{ Fs: handle.Fs,
                 children: make( map[string]*Node ),
-                Path: path,
+                Path: fullPath,
                 trimPath: trimPath }
 
   // Assign leafFunc
@@ -67,8 +67,8 @@ func (handle *Node) makeNode( path []string ) (*Node) {
               }
   }
 
-  fmt.Println("registering ", fullPath )
-  http.Handle( fullPath, node )
+  fmt.Println("registering ", trimPath )
+  http.Handle( trimPath, node )
 
   return &node
 }
@@ -85,7 +85,7 @@ func (node Node) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
 }
 
 
-func MakeRootNode( Fs *HttpFs, root string ) (*Node) {
+func MakeRootNode( Fs *HttpFS, root string ) (*Node) {
   return &Node{Path: "/",
                 trimPath: root,
                 children: make( map[string]*Node ),
