@@ -1,5 +1,11 @@
 package lazycache
 
+import "net/http"
+import "fmt"
+
+func HandleDirectory( node *Node, w http.ResponseWriter, req *http.Request ) {
+  fmt.Fprintf( w, "DirectoryHandler: %s\n", node.Path )
+}
 
 // import (
 //   "fmt"
