@@ -6,7 +6,7 @@ import "encoding/json"
 import "strings"
 
 func HandleDirectory( node *Node, path []string, w http.ResponseWriter, req *http.Request ) {
-  fmt.Printf("HandleDirectory %s with path (%d) %s\n", node.Path, len(path), strings.Join(path,"-") )
+  fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
 
   // In this case, any residual path is further directories...
   if len(path) > 0 {
@@ -20,7 +20,7 @@ func HandleDirectory( node *Node, path []string, w http.ResponseWriter, req *htt
 
     fmt.Printf("Residual path %d left, recursing to %s\n", len(path), path[0] )
    child,ok := node.Children[ path[0] ]
-   fmt.Println( child, ok )
+   //fmt.Println( child, ok )
    if ok && child != nil {
      child.Handle( path[1:], w, req )
    }
@@ -63,7 +63,7 @@ func BootstrapDirectory( node *Node, listing DirListing ) {
   for _,d := range listing.Directories {
     // Trim off trailing slash
     dirName := strings.TrimRight( d, "/" )
-    newNode := node.MakeNode( dirName  )
+    newNode := node.MakeNode( dirName + "/" )
     newNode.leafFunc = HandleDirectory
     fmt.Printf("Adding directory %s to %s\n", dirName, node.Path )
     node.Children[dirName] = newNode
@@ -72,7 +72,7 @@ func BootstrapDirectory( node *Node, listing DirListing ) {
   for _,f := range listing.Files {
     newNode := node.MakeNode( f )
     node.Children[f] = newNode
-    fmt.Printf("Adding directory %s to %s\n", f, node.Path )
+    fmt.Printf("Adding file %s to %s\n", f, node.Path )
   }
 }
 
