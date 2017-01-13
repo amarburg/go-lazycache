@@ -7,42 +7,49 @@ import "strings"
 import "regexp"
 
 
-type HandlerCommon struct {
-//  root string   // For simplicity, root is stored without the trailing slash
-}
+// type HandlerCommon struct {
+// //  root string   // For simplicity, root is stored without the trailing slash
+// }
 
 type Node struct {
   Path, trimPath    string
   Fs *HttpFS
   children map[string]*Node
-  leafFunc func( *Node, http.ResponseWriter, *http.Request )
+  leafFunc func( *Node, []string, http.ResponseWriter, *http.Request )
 }
 
 var movExtension = regexp.MustCompile(`\.mov$`)
+var mp4Extension = regexp.MustCompile(`\.mp4$`)
 
-
-// type RootNode struct {
-//   nodes    *Node
-//   rootPath string
-// }
-
+// // type RootNode struct {
+// //   nodes    *Node
+// //   rootPath string
+// // }
 
 
 func (node *Node) handle( path []string, w http.ResponseWriter, req *http.Request ) {
 
   if( len( path ) > 0 ) {
-  fmt.Printf( "Node: %s\n", node.Path )
+    fmt.Printf( "Node handling: %s\n", node.Path )
 
-    child,ok := node.children[ path[0] ]
-    if ok  {
-      child.handle( path[1:], w, req )
+    if child,ok := node.children[ path[0] ]; ok   {
+      if child != nil {
+        child.handle( path[1:], w, req )
+      } else {
+
+        // Create a new directory node, populate it, then run it
+        newNode := node.makeNode( path )
+        node.children[ path[0] ] = newNode
+        newNode.populate()
+        newNode.handle( path[1:], w, req )
+
+      }
     } else {
-      newNode := node.makeNode( path )
-      node.children[ path[0] ] = newNode
-      newNode.handle( path[1:], w, req )
+      fmt.Println("New path: ")
     }
   } else {
-    printf("Leaf: %s \n", node.Path)
+    fmt.Println("len(path) == 0")
+    // printf("Leaf: %s \n", node.Path)
     if node.leafFunc != nil {
       node.leafFunc( node, w, req )
     }
@@ -56,16 +63,17 @@ func (handle *Node) makeNode( path []string ) (*Node) {
   fullPath := handle.Path + path[0] + "/"
   node := Node{ Fs: handle.Fs,
                 children: make( map[string]*Node ),
+                leaves: make( map[string]*Node ),
                 Path: fullPath,
                 trimPath: trimPath }
 
   // Assign leafFunc
-  switch( node.Fs.PathType( node.trimPath ) ) {
-  case Directory: node.leafFunc = HandleDirectory
-  case File: if movExtension.MatchString( path[0] ) {
-                node.leafFunc = HandleMov
-              }
-  }
+  // switch( node.Fs.PathType( node.trimPath ) ) {
+  // case Directory: node.leafFunc = HandleDirectory
+  // case File: if movExtension.MatchString( path[0] ) {
+  //               node.leafFunc = HandleMov
+  //             }
+  // }
 
   fmt.Println("registering ", trimPath )
   http.Handle( trimPath, node )
@@ -84,13 +92,41 @@ func (node Node) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
   node.handle( elements, w, req )
 }
 
+func (node *Node) autodetect() {
+
+  if movExtension.MatchString( node.Path ) {
+    node.leafFunc = HandleMov
+  } else if mp4Extension.MatchString( node.Path ) {
+    node.leafFunc = HandleDefault
+  } else {
+    // Try a directory
+    listing,err := node.Fs.ReadHttpDir( node.Path )
+
+    if err == nil {
+      // TODO.  Reformat the output for JSON
+      fmt.Printf("Populating node %s with %d children and %d files\n", node.Path, len(listing.Files), len(listing.Directories))
+
+      for _,d := range listing.Directories {
+        node.children[ d ] = nil
+      }
+
+    }
+
+  }
+
+}
+
 
 func MakeRootNode( Fs *HttpFS, root string ) (*Node) {
-  return &Node{Path: "/",
+  node := &Node{Path: "/",
                 trimPath: root,
                 children: make( map[string]*Node ),
+                leaves: make( map[string]*Node ),
                 Fs: Fs,
               }
+
+  node.autodetect()
+  return node
 }
 
 

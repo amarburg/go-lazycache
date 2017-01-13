@@ -4,7 +4,7 @@ import "net/http"
 import "fmt"
 import "encoding/json"
 
-func HandleDirectory( node *Node, w http.ResponseWriter, req *http.Request ) {
+func HandleDirectory( node *Node, path []string, w http.ResponseWriter, req *http.Request ) {
   //fmt.Fprintf( w, "DirectoryHandler: %s\n", node.Path )
 
     listing,err := node.Fs.ReadHttpDir( node.Path )
