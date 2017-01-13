@@ -13,7 +13,7 @@ type HandlerCommon struct {
 
 type Node struct {
   Path, trimPath    string
-  fs *HttpFS
+  Fs *HttpFs
   children map[string]*Node
   leafFunc func( *Node, http.ResponseWriter, *http.Request )
 }
@@ -52,14 +52,15 @@ func (node *Node) handle( path []string, w http.ResponseWriter, req *http.Reques
 func (handle *Node) makeNode( path []string ) (*Node) {
   fmt.Println("Creating node for", path[0] )
 
-  fullPath := handle.trimPath + path[0] + "/"
-  node := Node{ fs: handle.fs,
+  trimPath := handle.trimPath + path[0] + "/"
+  path     := handlePath + path[0] + "/",
+  node := Node{ Fs: handle.Fs,
                 children: make( map[string]*Node ),
-                Path: path[0] + "/",
-                trimPath: fullPath }
+                Path: path,
+                trimPath: trimPath }
 
   // Assign leafFunc
-  switch( node.fs.PathType( node.trimPath ) ) {
+  switch( node.Fs.PathType( node.trimPath ) ) {
   case Directory: node.leafFunc = HandleDirectory
   case File: if movExtension.MatchString( path[0] ) {
                 node.leafFunc = HandleMov
@@ -84,11 +85,11 @@ func (node Node) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
 }
 
 
-func MakeRootNode( fs *HttpFS, root string ) (*Node) {
+func MakeRootNode( Fs *HttpFs, root string ) (*Node) {
   return &Node{Path: "/",
                 trimPath: root,
                 children: make( map[string]*Node ),
-                fs: fs,
+                Fs: Fs,
               }
 }
 

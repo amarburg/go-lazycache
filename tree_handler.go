@@ -4,7 +4,24 @@ import "net/http"
 import "fmt"
 
 func HandleDirectory( node *Node, w http.ResponseWriter, req *http.Request ) {
-  fmt.Fprintf( w, "DirectoryHandler: %s\n", node.Path )
+  //fmt.Fprintf( w, "DirectoryHandler: %s\n", node.Path )
+
+    listing,err := node.fs.ReadHttpDir( node.Path )
+
+    if err == nil {
+
+      // TODO.  Reformat the output for JSON
+
+      b, err := json.MarshalIndent(listing,"","  ")
+      if err != nil {
+        fmt.Fprintln(w, "JSON error:", err)
+      }
+
+      w.Write(b)
+
+    } else {
+      http.Error( w, fmt.Sprintf( "Error: %s", err.Error() ), 500 )
+    }
 }
 
 // import (
