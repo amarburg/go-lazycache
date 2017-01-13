@@ -6,15 +6,10 @@ import "strings"
 
 import "regexp"
 
-
-// type HandlerCommon struct {
-// //  root string   // For simplicity, root is stored without the trailing slash
-// }
-
 type Node struct {
   Path, trimPath    string
   Fs *HttpFS
-  children map[string]*Node
+  Children map[string]*Node
   leafFunc func( *Node, []string, http.ResponseWriter, *http.Request )
 }
 
@@ -27,43 +22,127 @@ var mp4Extension = regexp.MustCompile(`\.mp4$`)
 // // }
 
 
-func (node *Node) handle( path []string, w http.ResponseWriter, req *http.Request ) {
+func (node Node) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
 
-  if( len( path ) > 0 ) {
-    fmt.Printf( "Node handling: %s\n", node.Path )
+  shortPath := strings.TrimPrefix( req.URL.Path, node.trimPath )
+  elements  := strings.Split( shortPath, "/" )
+  elements  = elements[:len(elements)-1]
 
-    if child,ok := node.children[ path[0] ]; ok   {
-      if child != nil {
-        child.handle( path[1:], w, req )
-      } else {
-
-        // Create a new directory node, populate it, then run it
-        newNode := node.makeNode( path )
-        node.children[ path[0] ] = newNode
-        newNode.populate()
-        newNode.handle( path[1:], w, req )
-
-      }
-    } else {
-      fmt.Println("New path: ")
-    }
-  } else {
-    fmt.Println("len(path) == 0")
-    // printf("Leaf: %s \n", node.Path)
-    if node.leafFunc != nil {
-      node.leafFunc( node, w, req )
-    }
-  }
+  // Starting root, pass off to Handlers
+  node.Handle( elements, w, req )
 }
 
-func (handle *Node) makeNode( path []string ) (*Node) {
-  fmt.Println("Creating node for", path[0] )
 
-  trimPath := handle.trimPath + path[0] + "/"
-  fullPath := handle.Path + path[0] + "/"
-  node := Node{ Fs: handle.Fs,
-                children: make( map[string]*Node ),
-                leaves: make( map[string]*Node ),
+func (node *Node) Handle( path []string, w http.ResponseWriter, req *http.Request ) {
+  fmt.Printf("Calling Handler %s with path (%d) %s\n", node.Path, len(path), strings.Join(path,"-") )
+
+  // If I have a leafFunc, I've been assigned a Handler.
+  if node.leafFunc == nil {
+    // If not, try to autodetect what my job should be
+    node.autodetectLeafFunc()
+  }
+
+  if node.leafFunc != nil {
+    // args := path
+    // if len(path) > 0 {
+    //   args = path[1:]
+    // }
+    node.leafFunc( node, path, w, req )
+  } else {
+    // Still no assignment?  If there are paths left, assume it's a directory and recurse
+
+    fmt.Printf("Don't know what to do with %s but there are paths left, assume it's a directory and move on...", path[0])
+    if len(path) > 0 {
+      newNode := node.MakeNode( path[0] )
+      newNode.leafFunc = HandleDirectory
+      node.Children[path[0]] = newNode
+      newNode.autodetectLeafFunc()
+      newNode.Handle( path[1:], w, req )
+    }
+  }
+
+}
+
+  // if( len( path ) > 0 ) {
+  //   fmt.Printf( "Node handling: %s\n", node.Path )
+  //
+  //   if child,ok := node.children[ path[0] ]; ok   {
+  //     if child != nil {
+  //       child.Handle( path[1:], w, req )
+  //     } else {
+  //
+  //       // Create a new directory node, populate it, then run it
+  //       newNode := node.makeNode( path )
+  //       node.children[ path[0] ] = newNode
+  //       newNode.populate()
+  //       newNode.Handle( path[1:], w, req )
+  //
+  //     }
+  //   } else {
+  //     fmt.Println("New path: ")
+  //   }
+  // } else {
+  //   fmt.Println("len(path) == 0")
+  //   // printf("Leaf: %s \n", node.Path)
+  //
+  // }
+//}
+
+
+func (node *Node) autodetectLeafFunc() {
+
+  if movExtension.MatchString( node.Path ) {
+    node.leafFunc = HandleMov
+  } else if mp4Extension.MatchString( node.Path ) {
+    node.leafFunc = HandleDefault
+  } else {
+    // Try a directory
+
+    listing,err := node.Fs.ReadHttpDir( node.Path )
+
+    if err == nil {
+      node.leafFunc = HandleDirectory
+
+      fmt.Printf("Auto detected a directory...\n")
+      BootstrapDirectory( node, listing )
+      // TODO.  Reformat the output for JSON
+      //fmt.Printf("Populating node %s with %d children and %d files\n", node.Path, len(listing.Files), len(listing.Directories))
+
+      // for _,d := range listing.Directories {
+      //   node.children[ d ] = nil
+      // }
+
+    } else {
+      fmt.Printf("Could not detect type for %s\n", node.Path )
+    }
+
+  }
+
+}
+
+
+func MakeRootNode( Fs *HttpFS, root string ) (*Node) {
+  node := &Node{Path: "/",
+                trimPath: root,
+                Children: make( map[string]*Node ),
+                Fs: Fs,
+              }
+
+  node.autodetectLeafFunc()
+
+  fmt.Println("registering ", node.trimPath )
+  http.Handle( node.trimPath, node )
+
+  return node
+}
+
+func (parent *Node) MakeNode( path string ) (*Node) {
+  fmt.Println("Creating node for", path )
+
+  trimPath := parent.trimPath + path + "/"
+  fullPath := parent.Path + path + "/"
+  node := &Node{ Fs: parent.Fs,
+                Children: make( map[string]*Node ),
                 Path: fullPath,
                 trimPath: trimPath }
 
@@ -75,69 +154,22 @@ func (handle *Node) makeNode( path []string ) (*Node) {
   //             }
   // }
 
-  fmt.Println("registering ", trimPath )
-  http.Handle( trimPath, node )
+  fmt.Println("registering ", node.trimPath )
+  http.Handle( node.trimPath, node )
 
-  return &node
-}
-
-func (node Node) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
-  fmt.Printf("Node handler %s for %s\n", node.Path, req.URL.Path )
-
-  shortPath := strings.TrimPrefix( req.URL.Path, node.trimPath )
-  elements  := strings.Split( shortPath, "/" )
-  elements  = elements[:len(elements)-1]
-
-  // Starting root, pass off to handlers
-  node.handle( elements, w, req )
-}
-
-func (node *Node) autodetect() {
-
-  if movExtension.MatchString( node.Path ) {
-    node.leafFunc = HandleMov
-  } else if mp4Extension.MatchString( node.Path ) {
-    node.leafFunc = HandleDefault
-  } else {
-    // Try a directory
-    listing,err := node.Fs.ReadHttpDir( node.Path )
-
-    if err == nil {
-      // TODO.  Reformat the output for JSON
-      fmt.Printf("Populating node %s with %d children and %d files\n", node.Path, len(listing.Files), len(listing.Directories))
-
-      for _,d := range listing.Directories {
-        node.children[ d ] = nil
-      }
-
-    }
-
-  }
-
-}
-
-
-func MakeRootNode( Fs *HttpFS, root string ) (*Node) {
-  node := &Node{Path: "/",
-                trimPath: root,
-                children: make( map[string]*Node ),
-                leaves: make( map[string]*Node ),
-                Fs: Fs,
-              }
-
-  node.autodetect()
   return node
 }
 
 
 
+
 // func (root RootNode) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
-//   fmt.Printf("Default handler %s\n", req.URL.Path )
+//   fmt.Printf("Default Handler %s\n", req.URL.Path )
 //
 //   shortPath := strings.TrimPrefix( req.URL.Path, root.rootPath )
 //   elements  := strings.Split( shortPath, "/" )
 //   elements  = elements[:len(elements)-1]
-//   // Starting root, pass off to handlers
+//   // Starting root, pass off to Handlers
 //
 //   root.nodes.Handle( elements, w, req )
 // }

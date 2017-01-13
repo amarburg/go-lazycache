@@ -37,9 +37,10 @@ func main() {
   // Reverse hostname
   splitHN := MungeHostname( fs.Uri.Host )
 
-  root := fmt.Sprintf("/%s%s", strings.Join(splitHN,"/"), fs.Uri.Path )
-  http.Handle(root, lazycache.MakeRootNode( fs, root ) )
   http.HandleFunc("/", lazycache.Index )
+
+  root := fmt.Sprintf("/%s%s", strings.Join(splitHN,"/"), fs.Uri.Path )
+  lazycache.MakeRootNode( fs, root )
 
   fmt.Printf("Starting http handler at http://%s/\n", serverAddr)
   fmt.Printf("Fs at http://%s%s\n", serverAddr, root )
