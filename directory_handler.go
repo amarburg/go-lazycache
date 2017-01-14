@@ -18,7 +18,7 @@ func HandleDirectory( node *Node, path []string, w http.ResponseWriter, req *htt
       }
     }
 
-    fmt.Printf("Residual path %d left, recursing to %s\n", len(path), path[0] )
+    fmt.Printf("%d elements of residual path left, recursing to %s\n", len(path), path[0] )
    child,ok := node.Children[ path[0] ]
    //fmt.Println( child, ok )
    if ok && child != nil {
