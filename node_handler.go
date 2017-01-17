@@ -16,20 +16,11 @@ type Node struct {
 var movExtension = regexp.MustCompile(`\.mov$`)
 var mp4Extension = regexp.MustCompile(`\.mp4$`)
 
-// // type RootNode struct {
-// //   nodes    *Node
-// //   rootPath string
-// // }
 
-func stripBlankElementsRight( slice []string ) []string {
-  if len(slice) > 0 && len( slice[len(slice)-1] ) == 0  {
-      return stripBlankElementsRight( slice[:len(slice)-1] )
-  }
-  return slice
-}
 
 func (node Node) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
 
+  // Sanitive the input URL
   shortPath := strings.TrimPrefix( req.URL.Path, node.trimPath )
   elements  := stripBlankElementsRight( strings.Split( shortPath, "/" ) )
 
@@ -41,7 +32,7 @@ func (node Node) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
 
 
 func (node *Node) Handle( path []string, w http.ResponseWriter, req *http.Request ) {
-  fmt.Printf("Calling Handler %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
+  fmt.Printf("Calling Handle for path %s with (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
 
   // If I have a leafFunc, I've been assigned a Handler.
   if node.leafFunc == nil {
@@ -50,60 +41,32 @@ func (node *Node) Handle( path []string, w http.ResponseWriter, req *http.Reques
   }
 
   if node.leafFunc != nil {
-    // args := path
-    // if len(path) > 0 {
-    //   args = path[1:]
-    // }
     node.leafFunc( node, path, w, req )
   } else {
     // Still no assignment?  If there are paths left, assume it's a directory and recurse
 
     fmt.Printf("Don't know what to do with %s but there are paths left, assume it's a directory and move on...", path[0])
     if len(path) > 0 {
-      newNode := node.MakeNode( path[0] + "/" )
-      newNode.leafFunc = HandleDirectory
-      node.Children[path[0]] = newNode
-      newNode.autodetectLeafFunc()
-      newNode.Handle( path[1:], w, req )
+      node.Children[path[0]] = node.MakeNode( path[0] + "/" )
+      //newNode.leafFunc = HandleDirectory
+      //newNode.autodetectLeafFunc()
+      node.Children[path[0]].Handle( path[1:], w, req )
+    } else {
+      fmt.Printf("Don't know what to do with path %s\n", node.Path )
     }
   }
 
 }
 
-  // if( len( path ) > 0 ) {
-  //   fmt.Printf( "Node handling: %s\n", node.Path )
-  //
-  //   if child,ok := node.children[ path[0] ]; ok   {
-  //     if child != nil {
-  //       child.Handle( path[1:], w, req )
-  //     } else {
-  //
-  //       // Create a new directory node, populate it, then run it
-  //       newNode := node.makeNode( path )
-  //       node.children[ path[0] ] = newNode
-  //       newNode.populate()
-  //       newNode.Handle( path[1:], w, req )
-  //
-  //     }
-  //   } else {
-  //     fmt.Println("New path: ")
-  //   }
-  // } else {
-  //   fmt.Println("len(path) == 0")
-  //   // printf("Leaf: %s \n", node.Path)
-  //
-  // }
-//}
-
 
 func (node *Node) autodetectLeafFunc() {
 
   if movExtension.MatchString( node.Path ) {
-    node.leafFunc = HandleMov
+    node.leafFunc = MoovHandler
   } else if mp4Extension.MatchString( node.Path ) {
-    node.leafFunc = HandleDefault
+    node.leafFunc = HandleCache
   } else {
-    // Try a directory
+    // Try to parse it as a directory
 
     listing,err := node.Fs.ReadHttpDir( node.Path )
 
@@ -112,6 +75,7 @@ func (node *Node) autodetectLeafFunc() {
 
       fmt.Printf("Auto detected a directory...\n")
       BootstrapDirectory( node, listing )
+
       // TODO.  Reformat the output for JSON
       //fmt.Printf("Populating node %s with %d children and %d files\n", node.Path, len(listing.Files), len(listing.Directories))
 
@@ -128,21 +92,6 @@ func (node *Node) autodetectLeafFunc() {
 }
 
 
-func MakeRootNode( Fs *HttpFS, root string ) (*Node) {
-  node := &Node{Path: "/",
-                trimPath: root,
-                Children: make( map[string]*Node ),
-                Fs: Fs,
-              }
-
-  node.autodetectLeafFunc()
-
-  fmt.Println("registering ", node.trimPath )
-  http.Handle( node.trimPath, node )
-
-  return node
-}
-
 func (parent *Node) MakeNode( path string ) (*Node) {
   fmt.Println("Creating node for", path )
 
@@ -153,30 +102,26 @@ func (parent *Node) MakeNode( path string ) (*Node) {
                 Path: fullPath,
                 trimPath: trimPath }
 
-  // Assign leafFunc
-  // switch( node.Fs.PathType( node.trimPath ) ) {
-  // case Directory: node.leafFunc = HandleDirectory
-  // case File: if movExtension.MatchString( path[0] ) {
-  //               node.leafFunc = HandleMov
-  //             }
-  // }
+  // By default, don't eager load the children of a new node...
 
-  fmt.Println("registering ", node.trimPath )
+  fmt.Println("registering node at ", node.trimPath )
   http.Handle( node.trimPath, node )
 
   return node
 }
 
 
+func MakeRootNode( Fs *HttpFS, root string ) (*Node) {
+  node := &Node{Path: "/",
+                trimPath: root,
+                Children: make( map[string]*Node ),
+                Fs: Fs,
+              }
 
+  node.autodetectLeafFunc()
 
-// func (root RootNode) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
-//   fmt.Printf("Default Handler %s\n", req.URL.Path )
-//
-//   shortPath := strings.TrimPrefix( req.URL.Path, root.rootPath )
-//   elements  := strings.Split( shortPath, "/" )
-//   elements  = elements[:len(elements)-1]
-//   // Starting root, pass off to Handlers
-//
-//   root.nodes.Handle( elements, w, req )
-// }
+  fmt.Println("registering root node at ", node.trimPath )
+  http.Handle( node.trimPath, node )
+
+  return node
+}

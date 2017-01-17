@@ -4,21 +4,11 @@ import "fmt"
 import "net/http"
 import "net/url"
 import "strings"
-import "sort"
 
 import "github.com/amarburg/go-lazycache"
 
 var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/"
 
-func MungeHostname( hostname string ) []string {
-  splitHN := strings.Split( hostname, "." )
-  fmt.Println(splitHN)
-
-  for i, j := 0, len(splitHN)-1; i < j; i, j = i+1, j-1 {
-      sort.StringSlice(splitHN).Swap(i,j)
-  }
-  return splitHN
-}
 
 func main() {
 
@@ -31,11 +21,8 @@ func main() {
 
   serverAddr := "localhost:5000"
 
-
-  //http.HandleFunc("*.mov/*", lazycache.MoovHandler )
-
   // Reverse hostname
-  splitHN := MungeHostname( fs.Uri.Host )
+  splitHN := lazycache.MungeHostname( fs.Uri.Host )
 
   http.HandleFunc("/", lazycache.Index )
 

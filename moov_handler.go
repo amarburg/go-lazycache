@@ -8,10 +8,11 @@ import "encoding/json"
 import "github.com/amarburg/go-lazyfs"
 import "github.com/amarburg/go-lazycache/quicktime_store"
 
-func HandleMov( node *Node, path []string, w http.ResponseWriter, req *http.Request ) {
+func MoovHandler( node *Node, path []string, w http.ResponseWriter, req *http.Request ) {
 //  fmt.Fprintf( w, "Quicktime handler: %s with residual path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
 
   lqt,have := quicktime_store.HaveEntry( node.trimPath )
+
   if !have {
     uri := node.Fs.Uri
     uri.Path += node.Path
