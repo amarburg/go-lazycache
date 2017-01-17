@@ -4,6 +4,7 @@ package quicktime_store
 
 import "github.com/amarburg/go-lazyfs"
 import "github.com/amarburg/go-lazyquicktime"
+import "github.com/amarburg/go-quicktime"
 
 
 // type QuicktimeEntry struct {
@@ -26,6 +27,8 @@ func AddEntry( key string, fs lazyfs.FileSource ) (*lazyquicktime.LazyQuicktime,
 
   var err error
   DefaultQuicktimeStore.store[ key ],err = lazyquicktime.LoadMovMetadata( fs )
+
+  quicktime.DumpTree( DefaultQuicktimeStore.store[ key ].Tree )
 
   return  DefaultQuicktimeStore.store[ key ], err
 }
