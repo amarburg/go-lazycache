@@ -6,11 +6,15 @@ import "strings"
 import "strconv"
 
 //import "strings"
+//import "io"
 import "encoding/json"
 import "image/png"
+import "bytes"
 
 import "github.com/amarburg/go-lazyfs"
 import "github.com/amarburg/go-lazycache/quicktime_store"
+import "github.com/amarburg/go-lazycache/image_store"
+
 import "github.com/amarburg/go-lazyquicktime"
 
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) {
@@ -67,11 +71,30 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
     return
   }
 
+
+  UUID := req.URL.Path
+
+  url,ok := image_store.Url( UUID )
+
+  if ok {
+    fmt.Printf("Image %s exists in the Image store at %s", UUID, url)
+    http.Redirect( w, req, url, 302  )
+
+  } else {
+
 	img, err := lqt.ExtractFrame(frameNum)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error generating image for frame %d: %s", frameNum, err.Error()), 500)
     return
 	}
 
-	err = png.Encode(w, img)
+    buffer := new(bytes.Buffer)
+
+	 err = png.Encode( buffer, img)
+
+   image_store.Store( UUID, buffer )
+
+   buffer.WriteTo(w)
+
+  }
 }

@@ -5,10 +5,11 @@ import "golang.org/x/net/context"
 import "io"
 import "fmt"
 
+
 const ImageBucket = "image-store-test"
 const ProjectId = "smiling-gasket-155322"
 
-//type ImageStoreMap    map[string]string
+
 
 type ImageStore struct {
   ctx       context.Context
@@ -19,6 +20,10 @@ type ImageStore struct {
 
 var DefaultImageStore = ImageStore {}
 
+// Singletons which wrap the
+func Has( key string ) bool {
+  return DefaultImageStore.Has( key )
+}
 
 func Store( key string, data io.Reader ) {
   DefaultImageStore.Store( key, data )
@@ -26,6 +31,32 @@ func Store( key string, data io.Reader ) {
 
 func Retrieve( key string )  (io.Reader,error)  {
   return DefaultImageStore.Retrieve( key )
+}
+
+
+func Url( key string ) (string, bool) {
+  return DefaultImageStore.Url( key)
+}
+
+
+
+func (store *ImageStore) Has( key string ) (bool) {
+  store.initClient()
+
+  return false
+}
+
+func (store *ImageStore) Url( key string ) (string, bool) {
+  store.initClient()
+
+  obj := store.bucket.Object( key )
+  attr,err := obj.Attrs( store.ctx )
+
+  if err != nil {
+    return "", false
+  }
+
+  return attr.MediaLink, true
 }
 
 
@@ -39,7 +70,6 @@ func (store *ImageStore) Store( key string, data io.Reader ) {
       // TODO: Handle error.
   }
 }
-
 
 
 
