@@ -6,7 +6,7 @@ import "strings"
 import "strconv"
 
 //import "strings"
-//import "io"
+import "io"
 import "encoding/json"
 import "image/png"
 import "bytes"
@@ -61,46 +61,51 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 
 	if len(path) == 0 {
 		http.Error(w, fmt.Sprintf("Need to specify frame number"), 500)
-    return
+		return
 
 	}
 
 	frameNum, err := strconv.Atoi(path[0])
-  if err != nil {
-    http.Error(w, fmt.Sprintf("Error parsing frame number \"%s\"", path[0]), 500)
-    return
-  }
-
-
-  UUID := req.URL.Path + ".png"
-
-  url,ok := image_store.Url( UUID )
-
-  if ok {
-    fmt.Printf("Image %s exists in the Image store at %s", UUID, url)
-    http.Redirect( w, req, url, 302  )
-
-  } else {
-
-	img, err := lqt.ExtractFrame(frameNum)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error generating image for frame %d: %s", frameNum, err.Error()), 500)
-    return
+		http.Error(w, fmt.Sprintf("Error parsing frame number \"%s\"", path[0]), 500)
+		return
 	}
 
-    buffer := new(bytes.Buffer)
+	UUID := req.URL.Path + ".png"
 
-	   err = png.Encode( buffer, img)
+	url, ok := image_store.Url(UUID)
 
-     image_store.Store( UUID, buffer )
+	if ok {
+		fmt.Printf("Image %s exists in the Image store at %s", UUID, url)
+		// Set Content-Type or response
+		w.Header().Set("Content-Type", "image/png")
+		http.Redirect(w, req, url, 307)
 
-     fmt.Println(buffer)
-     
-     n,err := buffer.WriteTo(w)
-     fmt.Printf("Wrote %d bytes to http buffer\n", n)
-     if err != nil {
-       fmt.Printf("Error writing to HTTP buffer: %s\n", err.Error() )
-     }
+	} else {
 
-  }
+		img, err := lqt.ExtractFrame(frameNum)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error generating image for frame %d: %s", frameNum, err.Error()), 500)
+			return
+		}
+
+		buffer := new(bytes.Buffer)
+		err = png.Encode(buffer, img)
+
+		imgReader := bytes.NewReader(buffer.Bytes())
+
+    // write image to Image store
+		image_store.Store(UUID, imgReader)
+
+		//fmt.Println(buffer)
+		imgReader.Seek(0, io.SeekStart)
+
+    // Write image to HTTP request
+		n, err := imgReader.WriteTo(w)
+		fmt.Printf("Wrote %d bytes to http buffer\n", n)
+		if err != nil {
+			fmt.Printf("Error writing to HTTP buffer: %s\n", err.Error())
+		}
+
+	}
 }
