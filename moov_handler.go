@@ -72,7 +72,7 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
   }
 
 
-  UUID := req.URL.Path
+  UUID := req.URL.Path + ".png"
 
   url,ok := image_store.Url( UUID )
 
@@ -90,11 +90,17 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 
     buffer := new(bytes.Buffer)
 
-	 err = png.Encode( buffer, img)
+	   err = png.Encode( buffer, img)
 
-   image_store.Store( UUID, buffer )
+     image_store.Store( UUID, buffer )
 
-   buffer.WriteTo(w)
+     fmt.Println(buffer)
+     
+     n,err := buffer.WriteTo(w)
+     fmt.Printf("Wrote %d bytes to http buffer\n", n)
+     if err != nil {
+       fmt.Printf("Error writing to HTTP buffer: %s\n", err.Error() )
+     }
 
   }
 }
