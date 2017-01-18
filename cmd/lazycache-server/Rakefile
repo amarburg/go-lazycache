@@ -1,7 +1,7 @@
 
 
 
-namespace docker do
+namespace :docker do
 
   task :build do
     sh "docker build --tag amarburg/go-lazycache --no-cache ."
@@ -14,10 +14,11 @@ namespace docker do
 end
 
 task :deploy do
-  sh "gcloud compute instances create outyet \
-        --image container-vm-v20140925 \
+  sh "gcloud compute instances create go-lazycache \
+        --image-family gci-stable \
         --image-project google-containers \
-        --metadata-from-file google-container-manifest=containers.yaml \
+        --address go-lazycache
+        --metadata-from-file user-data=cloud-init \
         --tags http-server \
         --zone us-west1-a \
         --machine-type f1-micro"
