@@ -17,7 +17,7 @@ task :deploy do
   sh "gcloud compute instances create go-lazycache \
         --image-family gci-stable \
         --image-project google-containers \
-        --address go-lazycache
+        --address go-lazycache \
         --metadata-from-file user-data=cloud-init \
         --tags http-server \
         --zone us-west1-a \
