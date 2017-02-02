@@ -16,6 +16,8 @@ type ImageStoreConfig struct {
 
 type LazyCacheConfig struct {
   RootUrl      string
+  ServerIp      string
+  ServerPort    int
   ImageStore   ImageStoreConfig
 }
 
@@ -27,16 +29,26 @@ func LoadLazyCacheConfig( filename string ) (LazyCacheConfig, error) {
 
 settings, err := yaml.Open(filename)
 
-  // hash := make( map[string]string )
+  // Default values
+  config := LazyCacheConfig{
+    ServerPort:   5000,
+    ServerIp:     "0.0.0.0",
+  }
 
-  config := LazyCacheConfig{}
+
+  val := settings.Get("server_ip")
+  if val != nil { config.ServerIp = val.(string) }
+
+  val = settings.Get("server_port")
+  if val != nil { config.ServerPort = val.(int) }
 
   //-- Configure root_uri
-  val := settings.Get("root_url")
+  val = settings.Get("root_url")
   if val == nil {
     return config, fmt.Errorf("RootURL not specified")
   }
   config.RootUrl = val.(string)
+
 
   //-- Configure image store
   config.ImageStore = ImageStoreConfig { Type: IMAGE_STORE_NONE }

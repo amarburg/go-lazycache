@@ -1,2 +1,3 @@
 root_url: https://rawdata.oceanobservatories.org/
 image_store: bar
+server_ip:  127.0.0.1

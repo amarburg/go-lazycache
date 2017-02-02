@@ -33,8 +33,8 @@ func main() {
     panic( fmt.Sprintf("Error opening HTTP FS Source: %s", err.Error() ) )
   }
 
-  serverAddr := "0.0.0.0:5000"
-
+  serverAddr := fmt.Sprintf("%s:%d", config.ServerIp, config.ServerPort)
+  
   // Reverse hostname
   splitHN := lazycache.MungeHostname( fs.Uri.Host )
 
