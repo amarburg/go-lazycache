@@ -93,7 +93,7 @@ func (node *Node) autodetectLeafFunc() {
 
 
 func (parent *Node) MakeNode( path string ) (*Node) {
-  fmt.Println("Creating node for", path )
+  //fmt.Println("Creating node for", path )
 
   trimPath := parent.trimPath + path
   fullPath := parent.Path + path

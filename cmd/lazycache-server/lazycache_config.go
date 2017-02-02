@@ -2,6 +2,7 @@ package main
 
 import "os"
 import "fmt"
+import "strings"
 import "menteslibres.net/gosexy/yaml"
 
 
@@ -11,15 +12,18 @@ const (
 )
 
 type ImageStoreConfig struct {
-  Type     int
+  Type   int
+  Bucket  string
 }
 
 type LazyCacheConfig struct {
   RootUrl      string
   ServerIp      string
   ServerPort    int
-  ImageStore   ImageStoreConfig
+  ImageStoreConfig    ImageStoreConfig
 }
+
+const ImageStoreConfigName = "image_store"
 
 func LoadLazyCacheConfig( filename string ) (LazyCacheConfig, error) {
   _,err := os.Stat( filename )
@@ -35,6 +39,9 @@ settings, err := yaml.Open(filename)
     ServerIp:     "0.0.0.0",
   }
 
+  if settings == nil { return config, err }
+
+  fmt.Println(settings)
 
   val := settings.Get("server_ip")
   if val != nil { config.ServerIp = val.(string) }
@@ -51,12 +58,7 @@ settings, err := yaml.Open(filename)
 
 
   //-- Configure image store
-  config.ImageStore = ImageStoreConfig { Type: IMAGE_STORE_NONE }
-  val = settings.Get("image_store")
-  if val == nil {
-    return config, fmt.Errorf("RootURL not specified")
-  }
-  _,err = config.ImageStore.loadConfig( val )
+  _,err = config.ImageStoreConfig.loadConfig( settings )
   if err != nil { return config, err }
 
 
@@ -64,9 +66,33 @@ settings, err := yaml.Open(filename)
 }
 
 
-func (config *ImageStoreConfig) loadConfig( foo interface{} ) (bool,error) {
+func (config *ImageStoreConfig) loadConfig( settings *yaml.Yaml ) (bool,error) {
 
-fmt.Println(foo)
+  // Set defaults
+config.Type = IMAGE_STORE_NONE
+
+val := settings.Get(ImageStoreConfigName)
+if val == nil {  return true, nil }
+
+val = settings.Get( ImageStoreConfigName, "type" )
+if val == nil { return true, nil }
+
+fmt.Printf("ImageStore type: %s", val)
+switch( strings.ToLower( val.(string) )) {
+case "google":
+  config.Type = IMAGE_STORE_GOOGLE
+default:
+  return false, fmt.Errorf("Don't recognize ImageStore type \"%s\"", val )
+}
+
+switch( config.Type ) {
+case IMAGE_STORE_GOOGLE:
+  bucket := settings.Get( ImageStoreConfigName, "bucket")
+  if bucket == nil {
+    return false, fmt.Errorf("Google Image store requires a bucket name")
+  }
+  config.Bucket = bucket.(string)
+}
 
   return true, nil
 }
