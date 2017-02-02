@@ -7,12 +7,26 @@ import "strings"
 
 import "github.com/amarburg/go-lazycache"
 
+import "flag"
+
+var configFileFlag = flag.String("config", "", "YAML Configuration file")
+
 var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/"
 
 
 func main() {
 
-  url,err := url.Parse( OOIRawDataRootURL )
+  flag.Parse()
+
+  config,err := LoadLazyCacheConfig( *configFileFlag )
+
+  if err != nil {
+    panic( fmt.Sprintf("Error parsing config: %s", err.Error() ) )
+  }
+
+  fmt.Println(config)
+
+  url,err := url.Parse( config.RootUrl )
   fs, err := lazycache.OpenHttpFS( *url )
 
   if err != nil {

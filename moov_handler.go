@@ -22,10 +22,10 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 
 	lqt, have := quicktime_store.HaveEntry(node.trimPath)
 
+	uri := node.Fs.Uri
+	uri.Path += node.Path
+
 	if !have {
-		uri := node.Fs.Uri
-		uri.Path += node.Path
-		fmt.Println(uri.String())
 		fs, err := lazyfs.OpenHttpSource(uri)
 		if err != nil {
 			http.Error(w, "Something's went boom opening the HTTP Soruce!", 500)
@@ -40,13 +40,28 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	}
 
 	if len(path) == 0 {
-		b, err := json.MarshalIndent(lqt, "", "  ")
+		// Leaf node
+
+		// Temporary structure for JSON output
+		out := struct {
+			URL         string
+			NumFrames		int
+			Duration		float32
+		}{
+			URL:        uri.String(),
+			NumFrames:   lqt.NumFrames(),
+			Duration:    lqt.Duration(),
+		}
+
+		b, err := json.MarshalIndent(out, "", "  ")
 		if err != nil {
 			fmt.Fprintln(w, "JSON error:", err)
 		}
 
 		w.Write(b)
 	} else {
+
+		// Handle any residual path elements (frames, etc) here
 		switch strings.ToLower(path[0]) {
 		case "frame":
 			handleFrame(node, lqt, path[1:], w, req)
@@ -68,6 +83,15 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 	frameNum, err := strconv.Atoi(path[0])
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error parsing frame number \"%s\"", path[0]), 500)
+		return
+	}
+
+	if frameNum > lqt.NumFrames() {
+		http.Error(w, fmt.Sprintf("Requested frame %d in movie with %d frames", frameNum, lqt.NumFrames()), 400)
+		return
+	}
+	if frameNum < 1 {
+		http.Error(w, "Requested frame 0, Quicktime movies start with frame 1", 400)
 		return
 	}
 
