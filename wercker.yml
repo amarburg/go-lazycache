@@ -2,18 +2,15 @@ box: amarburg/golang-ffmpeg:wheezy-1.8
 
 build:
   steps:
-    - setup-go-workspace
-
-    - script:
-      code: |
-        env
+    - setup-go-workspace:
+        package-dir: github.com/amarburg/go-lazycache
 
     # Gets the dependencies
     - script:
         name: go get
         code: |
           go get -t .
-          go get -t cmd/lazycache-server
+          go get -t github.com/amarburg/go-lazycache/cmd/lazycache-server/lazycahce-server.go
 
     # Build the project
     - script:
@@ -33,4 +30,4 @@ trigger-deploy:
     - canopytax/trigger-build@0.5.3:
       token: $WERCKER_BEARER_TOKEN
       pipelineId: 58813bb5bb0e020100e9525e
-      message: Build triggered by deploy-lazycache commit
+      message: Build triggered by deploy-lazycache commit $WERCKER_GIT_COMMIT
