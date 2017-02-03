@@ -9,7 +9,8 @@ build:
     - script:
         name: go get
         code: |
-          go get -t
+          go get -t .
+          go get -t cmd/lazycache-server
 
     # Build the project
     - script:
@@ -22,3 +23,10 @@ build:
         name: go test
         code: |
           go test ./...
+
+trigger-deploy:
+  ## Triggers the lazycache-deploy/build pipeline
+  steps:
+    - mbrevda/wercker-triggerbuild@0.0.10
+      token: $WERCKER_BEARER_TOKEN
+      pipelineId: 58813bb5bb0e020100e9525e
