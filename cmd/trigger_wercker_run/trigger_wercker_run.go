@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-var PipelineFlag = flag.String("pipeline", "", "Id of pipeline to run")
+var PipelineFlag = flag.String("pipeline", WerckerPipelineId, "Id of pipeline to run")
 var MessageFlag = flag.String("message", "Started by Go", "Message to attach to run")
 
 func main() {
