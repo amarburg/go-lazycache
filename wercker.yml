@@ -1,9 +1,12 @@
 box: amarburg/golang-ffmpeg:wheezy-1.8
 
 build:
-
   steps:
     - setup-go-workspace
+
+    - script:
+      code: |
+        env
 
     # Gets the dependencies
     - script:
@@ -27,6 +30,7 @@ build:
 trigger-deploy:
   ## Triggers the lazycache-deploy/build pipeline
   steps:
-    - mbrevda/wercker-triggerbuild@0.0.10
+    - canopytax/trigger-build@0.5.3:
       token: $WERCKER_BEARER_TOKEN
       pipelineId: 58813bb5bb0e020100e9525e
+      message: Build triggered by deploy-lazycache commit
