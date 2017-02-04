@@ -23,7 +23,7 @@ build:
     - script:
         name: go test
         code: |
-          go test ./...
+          go test 
 
 trigger-deploy:
   ## Triggers the lazycache-deploy/build pipeline
