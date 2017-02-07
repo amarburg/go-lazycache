@@ -5,17 +5,18 @@ import "net/http"
 import "strings"
 
 import "regexp"
+import "sync"
 
 type Node struct {
   Path, trimPath    string
   Fs *HttpFS
+  ChildrenMutex sync.Mutex
   Children map[string]*Node
   leafFunc func( *Node, []string, http.ResponseWriter, *http.Request )
 }
 
 var movExtension = regexp.MustCompile(`\.mov$`)
 var mp4Extension = regexp.MustCompile(`\.mp4$`)
-
 
 
 func (node Node) ServeHTTP( w http.ResponseWriter, req *http.Request ) {
@@ -42,17 +43,25 @@ func (node *Node) Handle( path []string, w http.ResponseWriter, req *http.Reques
 
   if node.leafFunc != nil {
     node.leafFunc( node, path, w, req )
-  } else {
+  } else if len(path) > 0 {
     // Still no assignment?  If there are paths left, assume it's a directory and recurse
 
-    fmt.Printf("Don't know what to do with %s but there are paths left, assume it's a directory and move on...", path[0])
+    fmt.Printf("Don't know what to do with %s but there are paths left, assume it's a directory and move on...\n", path[0])
     if len(path) > 0 {
-      node.Children[path[0]] = node.MakeNode( path[0] + "/" )
+      node.ChildrenMutex.Lock()
+      if _,ok := node.Children[path[0]]; ok == false {
+        newNode := node.MakeNode( path[0] + "/" )
+        node.Children[path[0]] = newNode
+        fmt.Printf("Registering %s\n", newNode.trimPath )
+        http.Handle( newNode.trimPath, newNode )
+      }
+      node.ChildrenMutex.Unlock()
+
       //newNode.leafFunc = HandleDirectory
       //newNode.autodetectLeafFunc()
       node.Children[path[0]].Handle( path[1:], w, req )
     } else {
-      fmt.Printf("Don't know what to do with path %s\n", node.Path )
+      http.Error( w, fmt.Sprintf("Don't know what to do with path %s", node.Path ), 400 )
     }
   }
 
@@ -105,7 +114,6 @@ func (parent *Node) MakeNode( path string ) (*Node) {
   // By default, don't eager load the children of a new node...
 
   fmt.Println("registering node at ", node.trimPath )
-  http.Handle( node.trimPath, node )
 
   return node
 }

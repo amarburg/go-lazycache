@@ -26,18 +26,20 @@ type LazyCacheConfig struct {
 const ImageStoreConfigName = "image_store"
 
 func LoadLazyCacheConfig( filename string ) (LazyCacheConfig, error) {
-  _,err := os.Stat( filename )
-  if len(filename) == 0 || os.IsNotExist( err ) {
-    panic( "Need to specify a valid configuration with the --config option." )
-  }
-
-settings, err := yaml.Open(filename)
-
   // Default values
   config := LazyCacheConfig{
     ServerPort:   5000,
     ServerIp:     "0.0.0.0",
   }
+
+  _,err := os.Stat( filename )
+  if len(filename) == 0 || os.IsNotExist( err ) {
+    return config, fmt.Errorf( "Need to specify a valid configuration with the --config option." )
+  }
+
+settings, err := yaml.Open(filename)
+
+
 
   if settings == nil { return config, err }
 

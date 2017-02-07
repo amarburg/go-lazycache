@@ -8,7 +8,7 @@ import "strings"
 import "github.com/amarburg/go-lazycache"
 import "github.com/amarburg/go-lazycache/image_store"
 
-
+import "os"
 import "flag"
 
 var configFileFlag = flag.String("config", "", "YAML Configuration file")
@@ -23,7 +23,8 @@ func main() {
   config,err := LoadLazyCacheConfig( *configFileFlag )
 
   if err != nil {
-    panic( fmt.Sprintf("Error parsing config: %s", err.Error() ) )
+    fmt.Printf("Error parsing config: %s\n", err.Error() )
+    os.Exit(-1)
   }
 
   fmt.Println(config)
