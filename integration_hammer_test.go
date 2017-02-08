@@ -9,7 +9,7 @@ import "io/ioutil"
 import "testing"
 
 func TestHammerServer(t *testing.T) {
-	server := StartLazycacheServer( "127.0.0.1", 5000 )
+	server := StartLazycacheServer("127.0.0.1", 5000)
 	defer server.Stop()
 	AddMirror(OOIRawDataRootURL)
 

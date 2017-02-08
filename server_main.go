@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/amarburg/go-lazycache/image_store"
 	"github.com/amarburg/go-stoppable-http-server"
 	"net/http"
 	"net/url"
 	"strings"
-  "github.com/amarburg/go-lazycache/image_store"
-  //"github.com/amarburg/go-lazycache/quicktime_store"
+	//"github.com/amarburg/go-lazycache/quicktime_store"
 )
 
 var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/files/"
@@ -33,24 +33,24 @@ func main() {
 	//fmt.Println(config)
 	ConfigureImageStore(*image_store, *google_bucket)
 
-  server := StartLazycacheServer( *bind, *port )
-  defer server.Stop()
+	server := StartLazycacheServer(*bind, *port)
+	defer server.Stop()
 
 	AddMirror(OOIRawDataRootURL)
 
 	server.Wait()
 }
 
-func StartLazycacheServer( bind string, port int ) (*stoppable_http_server.SLServer) {
-  http.DefaultServeMux = http.NewServeMux()
+func StartLazycacheServer(bind string, port int) *stoppable_http_server.SLServer {
+	http.DefaultServeMux = http.NewServeMux()
 	http.HandleFunc("/", IndexHandler)
 
-  server := stoppable_http_server.StartServer( func(config *stoppable_http_server.HttpConfig) {
-  	config.Host = bind
-  	config.Port = port
-  } )
+	server := stoppable_http_server.StartServer(func(config *stoppable_http_server.HttpConfig) {
+		config.Host = bind
+		config.Port = port
+	})
 
-  return server
+	return server
 }
 
 func AddMirror(serverAddr string) {
@@ -66,7 +66,7 @@ func AddMirror(serverAddr string) {
 
 	// Reverse hostname
 	splitHN := MungeHostname(fs.Uri.Host)
-  root := fmt.Sprintf("/%s%s", strings.Join(splitHN, "/"), fs.Uri.Path)
+	root := fmt.Sprintf("/%s%s", strings.Join(splitHN, "/"), fs.Uri.Path)
 	MakeRootNode(fs, root)
 
 	RootMap[serverAddr] = root
