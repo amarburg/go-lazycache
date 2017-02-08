@@ -28,5 +28,6 @@ trigger-deploy:
   steps:
     - canopytax/trigger-build@0.5.3:
       token: $WERCKER_BEARER_TOKEN
-      pipelineId: 58813bb5bb0e020100e9525e
+      pipeline-id: 58813bb5bb0e020100e9525e
+      application-id: 58813bb5bb0e020100e9525e
       message: Build triggered by deploy-lazycache commit $WERCKER_GIT_COMMIT
