@@ -10,14 +10,37 @@ import "sync"
 type Node struct {
 	Path, trimPath string
 	Fs             *HttpFS
-	ChildrenMutex  sync.Mutex
 	Children       map[string]*Node
 	leafFunc       func(*Node, []string, http.ResponseWriter, *http.Request)
+}
+
+type RootNode struct {
+	Node 
+	nodeMap   map[string]*Node
+	nodeMutex map[string]sync.Mutex
 }
 
 var movExtension = regexp.MustCompile(`\.mov$`)
 var mp4Extension = regexp.MustCompile(`\.mp4$`)
 var jsonExtension = regexp.MustCompile(`\.json$`)
+
+func (node RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// Sanitive the input URL
+	shortPath := strings.TrimPrefix(req.URL.Path, node.trimPath)
+	elements := stripBlankElementsRight(strings.Split(shortPath, "/"))
+
+	if child, ok := node.nodeMap[req.URL.Path]; ok {
+		child.ServeHTTP(w, req)
+	} else {
+		node.nodeMutex[req.URL.Path].Lock()
+		if child, ok := node.nodeMap[req.URL.Path]; ok {
+			child.ServeHTTP(w, req)
+		} else {
+			node.Handle(elements, w, req)
+		}
+	}
+
+}
 
 func (node Node) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Sanitive the input URL
@@ -43,14 +66,12 @@ func (node *Node) Handle(path []string, w http.ResponseWriter, req *http.Request
 
 		fmt.Printf("Don't know what to do with %s but there are paths left, assume it's a directory and move on...\n", path[0])
 
-		node.ChildrenMutex.Lock()
 		if _, ok := node.Children[path[0]]; ok == false {
 			newNode := node.MakeNode(path[0] + "/")
 			node.Children[path[0]] = newNode
 			//fmt.Printf("Registering %s\n", newNode.trimPath)
 			//http.Handle(newNode.trimPath, newNode)
 		}
-		node.ChildrenMutex.Unlock()
 
 		//newNode.leafFunc = HandleDirectory
 		//newNode.autodetectLeafFunc()
@@ -108,7 +129,7 @@ func (parent *Node) MakeNode(path string) *Node {
 }
 
 func MakeRootNode(Fs *HttpFS, root string) *Node {
-	node := &Node{Path: "/",
+	node := &RootNode{Path: "/",
 		trimPath: root,
 		Children: make(map[string]*Node),
 		Fs:       Fs,
