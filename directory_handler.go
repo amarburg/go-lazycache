@@ -5,18 +5,32 @@ import "fmt"
 import "encoding/json"
 import "strings"
 
+
+var listingStore map[*Node]DirListing
+
+
+func init() {
+	listingStore = make( map[*Node]DirListing )
+}
+
+
 func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) (*Node) {
 	fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
-	// If there's residual path, they must be children (not a verb)
-	if len(path) > 0 {
-
-		// If I haven't been initialized, initialize myself as a directory
-		if len(node.Children) == 0 {
+	// Initialize or update as necessary
+	if _,ok := listingStore[node]; !ok {
+		node.updateMutex.Lock()
+		if _,ok = listingStore[node]; !ok {
 			if listing, err := node.Fs.ReadHttpDir(node.Path); err == nil {
-				BootstrapDirectory(node, listing)
+				listingStore[node] = listing
+				node.BootstrapDirectory(listing)
 			}
 		}
+		node.updateMutex.Unlock()
+	}
+
+	// If there's residual path, they must be children (not a verb)
+	if len(path) > 0 {
 
 		fmt.Printf("%d elements of residual path left, recursing to %s\n", len(path), path[0])
 
@@ -30,9 +44,9 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		// You're the leaf node
 
 		// TODO: Should really dump cached values, not reread from the source
-		listing, err := node.Fs.ReadHttpDir(node.Path)
+		//listing, err := node.Fs.ReadHttpDir(node.Path)
 
-		if err == nil {
+		if listing,ok := listingStore[node]; ok {
 
 			// Doesn't update ... yet
 			// Need to be able to unregister from ServeMux, among other things
@@ -43,7 +57,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 			// }
 
 			// TODO.  Reformat the output for JSON
-			// Technically, I should generate this baed on internal structure, not listing
+			// Technically, I should generate this based on internal structure, not listing
 
 			b, err := json.MarshalIndent(listing, "", "  ")
 			if err != nil {
@@ -53,14 +67,15 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 			w.Write(b)
 
 		} else {
-			http.Error(w, fmt.Sprintf("Error: %s", err.Error()), 500)
+			http.Error(w, fmt.Sprintf("Error while retrieving from : %s", node.trimPath), 500)
 		}
 	}
 
 	return nil
 }
 
-func BootstrapDirectory(node *Node, listing DirListing) {
+
+func (node *Node) BootstrapDirectory(listing DirListing) {
 	fmt.Printf("Bootstrapping directory %s\n", node.Path)
 
 	// Clear any existing children
@@ -77,6 +92,6 @@ func BootstrapDirectory(node *Node, listing DirListing) {
 	for _, f := range listing.Files {
 		newNode := node.MakeNode(f)
 		node.Children[f] = newNode
-		fmt.Printf("Adding file %s to %s\n", f, node.Path)
+		//fmt.Printf("Adding file %s to %s\n", f, node.Path)
 	}
 }

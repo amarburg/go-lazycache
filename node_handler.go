@@ -11,13 +11,14 @@ type Node struct {
 	Children       map[string]*Node
 	leafFunc       func(*Node, []string, http.ResponseWriter, *http.Request) (*Node)
 	Fs							*HttpFS
+
+	updateMutex			sync.Mutex
 }
 
 type RootNode struct {
 	node           *Node
 
 	nodeMap   map[string]*Node
-	nodeMutex map[string]sync.Mutex
 }
 
 
@@ -96,7 +97,7 @@ func (node *Node) autodetectLeafFunc() {
 			node.leafFunc = HandleDirectory
 
 			fmt.Printf("Auto detected a directory...\n")
-			BootstrapDirectory(node, listing)
+			node.BootstrapDirectory(listing)
 
 			// TODO.  Reformat the output for JSON
 			//fmt.Printf("Populating node %s with %d children and %d files\n", node.Path, len(listing.Files), len(listing.Directories))
