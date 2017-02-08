@@ -19,7 +19,7 @@ build:
 
     # Test the project
     - script:
-        name: Run integeration tests
+        name: Run integration tests
         code: |
           go test -tags integration
 
