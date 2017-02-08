@@ -11,7 +11,7 @@ import (
   //"github.com/amarburg/go-lazycache/quicktime_store"
 )
 
-var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/"
+var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/files/"
 
 func main() {
 
@@ -43,6 +43,8 @@ func main() {
 
 func StartLazycacheServer( bind string, port int ) (*stoppable_http_server.SLServer) {
   http.DefaultServeMux = http.NewServeMux()
+	http.HandleFunc("/", IndexHandler)
+
   server := stoppable_http_server.StartServer( func(config *stoppable_http_server.HttpConfig) {
   	config.Host = bind
   	config.Port = port
@@ -67,8 +69,7 @@ func AddMirror(serverAddr string) {
   root := fmt.Sprintf("/%s%s", strings.Join(splitHN, "/"), fs.Uri.Path)
 	MakeRootNode(fs, root)
 
-	http.HandleFunc("/", IndexHandler)
-
+	RootMap[serverAddr] = root
 
 	// fmt.Printf("Starting http handler at http://%s/\n", serverAddr)
 	// fmt.Printf("Fs at http://%s%s\n", serverAddr, root )
