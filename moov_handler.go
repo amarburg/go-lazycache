@@ -1,4 +1,4 @@
-package lazycache
+package main
 
 import "fmt"
 import "net/http"
@@ -44,13 +44,13 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 
 		// Temporary structure for JSON output
 		out := struct {
-			URL         string
-			NumFrames		int
-			Duration		float32
+			URL       string
+			NumFrames int
+			Duration  float32
 		}{
-			URL:        uri.String(),
-			NumFrames:   lqt.NumFrames(),
-			Duration:    lqt.Duration(),
+			URL:       uri.String(),
+			NumFrames: lqt.NumFrames(),
+			Duration:  lqt.Duration(),
 		}
 
 		b, err := json.MarshalIndent(out, "", "  ")
@@ -118,13 +118,13 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 
 		imgReader := bytes.NewReader(buffer.Bytes())
 
-    // write image to Image store
+		// write image to Image store
 		image_store.Store(UUID, imgReader)
 
 		//fmt.Println(buffer)
 		imgReader.Seek(0, io.SeekStart)
 
-    // Write image to HTTP request
+		// Write image to HTTP request
 		n, err := imgReader.WriteTo(w)
 		fmt.Printf("Wrote %d bytes to http buffer\n", n)
 		if err != nil {
