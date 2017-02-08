@@ -7,15 +7,15 @@ import "strings"
 
 import "github.com/amarburg/go-lazycache/listing_store"
 
-func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) (*Node) {
+func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	// Initialize or update as necessary
-	if _,ok := listing_store.Get(node); !ok {
+	if _, ok := listing_store.Get(node); !ok {
 		node.updateMutex.Lock()
-		if _,ok = listing_store.Get(node); !ok {
+		if _, ok = listing_store.Get(node); !ok {
 			if listing, err := node.Fs.ReadHttpDir(node.Path); err == nil {
-				listing_store.Update(node, listing )
+				listing_store.Update(node, listing)
 				node.BootstrapDirectory(listing)
 			}
 		}
@@ -28,7 +28,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		fmt.Printf("%d elements of residual path left, recursing to %s\n", len(path), path[0])
 
 		if child, ok := node.Children[path[0]]; ok && child != nil {
-		 	return child
+			return child
 		} else {
 			http.Error(w, fmt.Sprintf("Can't find %s within %s", path[0], node.trimPath), 404)
 		}
@@ -39,7 +39,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		// TODO: Should really dump cached values, not reread from the source
 		//listing, err := node.Fs.ReadHttpDir(node.Path)
 
-		if listing,ok := listing_store.Get(node); ok {
+		if listing, ok := listing_store.Get(node); ok {
 
 			// Doesn't update ... yet
 			// Need to be able to unregister from ServeMux, among other things
@@ -67,7 +67,6 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 	return nil
 }
 
-
 func (node *Node) BootstrapDirectory(listing listing_store.DirListing) {
 	fmt.Printf("Bootstrapping directory %s\n", node.Path)
 
@@ -87,7 +86,7 @@ func (node *Node) BootstrapDirectory(listing listing_store.DirListing) {
 		node.Children[f] = newNode
 
 		newNode.autodetectLeafFunc()
-		
+
 		//fmt.Printf("Adding file %s to %s\n", f, node.Path)
 	}
 }

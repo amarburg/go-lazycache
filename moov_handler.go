@@ -17,7 +17,7 @@ import "github.com/amarburg/go-lazycache/image_store"
 
 import "github.com/amarburg/go-lazyquicktime"
 
-func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) (*Node) {
+func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	//  fmt.Fprintf( w, "Quicktime handler: %s with residual path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
 
 	lqt, have := quicktime_store.HaveEntry(node.trimPath)

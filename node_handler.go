@@ -9,18 +9,17 @@ import "sync"
 type Node struct {
 	Path, trimPath string
 	Children       map[string]*Node
-	leafFunc       func(*Node, []string, http.ResponseWriter, *http.Request) (*Node)
-	Fs							*HttpFS
+	leafFunc       func(*Node, []string, http.ResponseWriter, *http.Request) *Node
+	Fs             *HttpFS
 
-	updateMutex			sync.Mutex
+	updateMutex sync.Mutex
 }
 
 type RootNode struct {
-	node           *Node
+	node *Node
 
-	nodeMap   map[string]*Node
+	nodeMap map[string]*Node
 }
-
 
 func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Sanitive the input URL
@@ -28,7 +27,7 @@ func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	elements := stripBlankElementsRight(strings.Split(shortPath, "/"))
 
 	// Launch into the tree
-	root.Handle( root.node, elements, w, req )
+	root.Handle(root.node, elements, w, req)
 
 	// if child, ok := node.nodeMap[req.URL.Path]; ok {
 	// 	child.ServeHTTP(w, req)
@@ -52,10 +51,9 @@ func (root *RootNode) Handle(node *Node, path []string, w http.ResponseWriter, r
 	// 	node.autodetectLeafFunc()
 	// }
 
-
 	if node.leafFunc != nil {
 		if recurse := node.leafFunc(node, path, w, req); recurse != nil {
-			root.Handle( recurse, path[1:], w, req )
+			root.Handle(recurse, path[1:], w, req)
 		}
 	} else {
 		http.Error(w, fmt.Sprintf("Don't know what to do with path %s", node.Path), 400)
@@ -79,7 +77,6 @@ func (root *RootNode) Handle(node *Node, path []string, w http.ResponseWriter, r
 	//
 	// } else {
 
-
 }
 
 func (node *Node) autodetectLeafFunc() {
@@ -89,28 +86,29 @@ func (node *Node) autodetectLeafFunc() {
 	} else if mp4Extension.MatchString(node.Path) {
 		node.leafFunc = HandleCache
 	} else {
+		fmt.Printf("Could not detect type for %s\n", node.Path)
+}
 		// Try to parse it as a directory
 
-		listing, err := node.Fs.ReadHttpDir(node.Path)
-
-		if err == nil {
-			node.leafFunc = HandleDirectory
-
-			fmt.Printf("Auto detected a directory...\n")
-			node.BootstrapDirectory(listing)
-
-			// TODO.  Reformat the output for JSON
-			//fmt.Printf("Populating node %s with %d children and %d files\n", node.Path, len(listing.Files), len(listing.Directories))
-
-			// for _,d := range listing.Directories {
-			//   node.children[ d ] = nil
-			// }
-
-		} else {
-			fmt.Printf("Could not detect type for %s\n", node.Path)
-		}
-
-	}
+	// 	listing, err := node.Fs.ReadHttpDir(node.Path)
+	//
+	// 	if err == nil {
+	// 		node.leafFunc = HandleDirectory
+	//
+	// 		fmt.Printf("Auto detected a directory...\n")
+	// 		node.BootstrapDirectory(listing)
+	//
+	// 		// TODO.  Reformat the output for JSON
+	// 		//fmt.Printf("Populating node %s with %d children and %d files\n", node.Path, len(listing.Files), len(listing.Directories))
+	//
+	// 		// for _,d := range listing.Directories {
+	// 		//   node.children[ d ] = nil
+	// 		// }
+	//
+	// 	} else {
+	// 	}
+	//
+	// }
 
 }
 
@@ -131,16 +129,15 @@ func (parent *Node) MakeNode(path string) *Node {
 
 func MakeRootNode(Fs *HttpFS, root string) {
 	rootNode := &RootNode{
-		node:    &Node{
-			Path: "/",
+		node: &Node{
+			Path:     "/",
 			trimPath: root,
 			Children: make(map[string]*Node),
 			Fs:       Fs,
 		},
-
 	}
 
 	http.Handle(rootNode.node.trimPath, rootNode)
-
-	rootNode.node.autodetectLeafFunc()
+	rootNode.node.leafFunc = HandleDirectory // Assign leafFunc because we know it's a directory
+	//rootNode.node.autodetectLeafFunc()
 }
