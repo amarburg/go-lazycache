@@ -15,15 +15,13 @@ build:
     - script:
         name: go build
         code: |
-          go get github.com/amarburg/go-lazycache/cmd/lazycache-server/
-          go install github.com/amarburg/go-lazycache/cmd/lazycache-server/
           go build
 
     # Test the project
     - script:
         name: go test
         code: |
-          go test
+          go test -tags integration
 
 trigger-deploy:
   ## Triggers the lazycache-deploy/build pipeline

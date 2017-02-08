@@ -24,7 +24,7 @@ func (node Node) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	shortPath := strings.TrimPrefix(req.URL.Path, node.trimPath)
 	elements := stripBlankElementsRight(strings.Split(shortPath, "/"))
 
-	fmt.Printf("ServeHTTP with %d elements: (%s)\n", len(elements), strings.Join(elements, ":"))
+	//fmt.Printf("ServeHTTP with %d elements: (%s)\n", len(elements), strings.Join(elements, ":"))
 
 	// Starting root, pass off to Handlers
 	node.Handle(elements, w, req)
@@ -45,6 +45,7 @@ func (node *Node) Handle(path []string, w http.ResponseWriter, req *http.Request
 		// Still no assignment?  If there are paths left, assume it's a directory and recurse
 
 		fmt.Printf("Don't know what to do with %s but there are paths left, assume it's a directory and move on...\n", path[0])
+
 		if len(path) > 0 {
 			node.ChildrenMutex.Lock()
 			if _, ok := node.Children[path[0]]; ok == false {
@@ -58,6 +59,7 @@ func (node *Node) Handle(path []string, w http.ResponseWriter, req *http.Request
 			//newNode.leafFunc = HandleDirectory
 			//newNode.autodetectLeafFunc()
 			node.Children[path[0]].Handle(path[1:], w, req)
+
 		} else {
 			http.Error(w, fmt.Sprintf("Don't know what to do with path %s", node.Path), 400)
 		}

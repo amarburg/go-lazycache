@@ -64,11 +64,11 @@ func AddMirror(serverAddr string) {
 
 	// Reverse hostname
 	splitHN := MungeHostname(fs.Uri.Host)
+  root := fmt.Sprintf("/%s%s", strings.Join(splitHN, "/"), fs.Uri.Path)
+	MakeRootNode(fs, root)
 
 	http.HandleFunc("/", IndexHandler)
 
-	root := fmt.Sprintf("/%s%s", strings.Join(splitHN, "/"), fs.Uri.Path)
-	MakeRootNode(fs, root)
 
 	// fmt.Printf("Starting http handler at http://%s/\n", serverAddr)
 	// fmt.Printf("Fs at http://%s%s\n", serverAddr, root )
