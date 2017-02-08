@@ -7,6 +7,8 @@ import "errors"
 import "golang.org/x/net/html"
 import "regexp"
 
+import "github.com/amarburg/go-lazycache/listing_store"
+
 type HttpFS struct {
 	Uri url.URL
 }
@@ -42,13 +44,7 @@ func (fs *HttpFS) PathType(path string) int {
 //   return src,err
 // }
 
-type DirListing struct {
-	Path        string
-	Files       []string
-	Directories []string
-}
-
-func (fs *HttpFS) ReadHttpDir(path string) (DirListing, error) {
+func (fs *HttpFS) ReadHttpDir(path string) (listing_store.DirListing, error) {
 	client := http.Client{}
 
 	pathUri := fs.Uri
@@ -58,7 +54,7 @@ func (fs *HttpFS) ReadHttpDir(path string) (DirListing, error) {
 
 	response, err := client.Get(pathUri.String())
 
-	listing := DirListing{Path: path,
+	listing := listing_store.DirListing{Path: path,
 		Files:       make([]string, 0),
 		Directories: make([]string, 0),
 	}

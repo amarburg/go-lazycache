@@ -5,24 +5,17 @@ import "fmt"
 import "encoding/json"
 import "strings"
 
-
-var listingStore map[*Node]DirListing
-
-
-func init() {
-	listingStore = make( map[*Node]DirListing )
-}
-
+import "github.com/amarburg/go-lazycache/listing_store"
 
 func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) (*Node) {
 	fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	// Initialize or update as necessary
-	if _,ok := listingStore[node]; !ok {
+	if _,ok := listing_store.Get(node); !ok {
 		node.updateMutex.Lock()
-		if _,ok = listingStore[node]; !ok {
+		if _,ok = listing_store.Get(node); !ok {
 			if listing, err := node.Fs.ReadHttpDir(node.Path); err == nil {
-				listingStore[node] = listing
+				listing_store.Update(node, listing )
 				node.BootstrapDirectory(listing)
 			}
 		}
@@ -46,7 +39,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		// TODO: Should really dump cached values, not reread from the source
 		//listing, err := node.Fs.ReadHttpDir(node.Path)
 
-		if listing,ok := listingStore[node]; ok {
+		if listing,ok := listing_store.Get(node); ok {
 
 			// Doesn't update ... yet
 			// Need to be able to unregister from ServeMux, among other things
@@ -75,7 +68,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 }
 
 
-func (node *Node) BootstrapDirectory(listing DirListing) {
+func (node *Node) BootstrapDirectory(listing listing_store.DirListing) {
 	fmt.Printf("Bootstrapping directory %s\n", node.Path)
 
 	// Clear any existing children
