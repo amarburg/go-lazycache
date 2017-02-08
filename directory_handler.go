@@ -85,6 +85,9 @@ func (node *Node) BootstrapDirectory(listing listing_store.DirListing) {
 	for _, f := range listing.Files {
 		newNode := node.MakeNode(f)
 		node.Children[f] = newNode
+
+		newNode.autodetectLeafFunc()
+		
 		//fmt.Printf("Adding file %s to %s\n", f, node.Path)
 	}
 }
