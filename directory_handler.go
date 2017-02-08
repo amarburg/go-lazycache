@@ -5,7 +5,7 @@ import "fmt"
 import "encoding/json"
 import "strings"
 
-func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) {
+func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) (*Node) {
 	fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	// If there's residual path, they must be children (not a verb)
@@ -21,10 +21,13 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		fmt.Printf("%d elements of residual path left, recursing to %s\n", len(path), path[0])
 
 		if child, ok := node.Children[path[0]]; ok && child != nil {
-			child.Handle(path[1:], w, req)
+		 	return child
+		} else {
+			http.Error(w, fmt.Sprintf("Can't find %s within %s", path[0], node.trimPath), 404)
 		}
+
 	} else {
-		// Only dump JSON if you're the leaf node
+		// You're the leaf node
 
 		// TODO: Should really dump cached values, not reread from the source
 		listing, err := node.Fs.ReadHttpDir(node.Path)
@@ -53,6 +56,8 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 			http.Error(w, fmt.Sprintf("Error: %s", err.Error()), 500)
 		}
 	}
+
+	return nil
 }
 
 func BootstrapDirectory(node *Node, listing DirListing) {

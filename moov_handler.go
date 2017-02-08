@@ -17,7 +17,7 @@ import "github.com/amarburg/go-lazycache/image_store"
 
 import "github.com/amarburg/go-lazyquicktime"
 
-func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) {
+func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) (*Node) {
 	//  fmt.Fprintf( w, "Quicktime handler: %s with residual path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
 
 	lqt, have := quicktime_store.HaveEntry(node.trimPath)
@@ -29,13 +29,13 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		fs, err := lazyfs.OpenHttpSource(uri)
 		if err != nil {
 			http.Error(w, "Something's went boom opening the HTTP Soruce!", 500)
-			return
+			return nil
 		}
 
 		lqt, err = quicktime_store.AddEntry(node.trimPath, fs)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Something's went boom parsing the quicktime file: %s", err.Error()), 500)
-			return
+			return nil
 		}
 	}
 
@@ -70,6 +70,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		}
 	}
 
+	return nil
 }
 
 func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w http.ResponseWriter, req *http.Request) {
