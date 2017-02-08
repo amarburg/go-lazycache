@@ -28,18 +28,6 @@ func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// Launch into the tree
 	root.Handle(root.node, elements, w, req)
-
-	// if child, ok := node.nodeMap[req.URL.Path]; ok {
-	// 	child.ServeHTTP(w, req)
-	// } else {
-	// 	node.nodeMutex[req.URL.Path].Lock()
-	// 	if child, ok := node.nodeMap[req.URL.Path]; ok {
-	// 		child.ServeHTTP(w, req)
-	// 	} else {
-	// 		node.Handle(elements, w, req)
-	// 	}
-	// }
-
 }
 
 func (root *RootNode) Handle(node *Node, path []string, w http.ResponseWriter, req *http.Request) {
@@ -84,32 +72,12 @@ func (node *Node) autodetectLeafFunc() {
 	if movExtension.MatchString(node.Path) {
 		node.leafFunc = MoovHandler
 	} else if mp4Extension.MatchString(node.Path) {
-		node.leafFunc = HandleCache
+		node.leafFunc = CacheHandler
 	} else {
-		fmt.Printf("Could not detect type for %s\n", node.Path)
-}
-		// Try to parse it as a directory
+		//fmt.Printf("Could not detect type for %s\n", node.Path)
+		node.leafFunc = RedirectHandler
 
-	// 	listing, err := node.Fs.ReadHttpDir(node.Path)
-	//
-	// 	if err == nil {
-	// 		node.leafFunc = HandleDirectory
-	//
-	// 		fmt.Printf("Auto detected a directory...\n")
-	// 		node.BootstrapDirectory(listing)
-	//
-	// 		// TODO.  Reformat the output for JSON
-	// 		//fmt.Printf("Populating node %s with %d children and %d files\n", node.Path, len(listing.Files), len(listing.Directories))
-	//
-	// 		// for _,d := range listing.Directories {
-	// 		//   node.children[ d ] = nil
-	// 		// }
-	//
-	// 	} else {
-	// 	}
-	//
-	// }
-
+	}
 }
 
 func (parent *Node) MakeNode(path string) *Node {

@@ -20,23 +20,28 @@ import "github.com/amarburg/go-lazyquicktime"
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	//  fmt.Fprintf( w, "Quicktime handler: %s with residual path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
 
-	lqt, have := quicktime_store.HaveEntry(node.trimPath)
-
 	uri := node.Fs.Uri
 	uri.Path += node.Path
 
-	if !have {
-		fs, err := lazyfs.OpenHttpSource(uri)
-		if err != nil {
-			http.Error(w, "Something's went boom opening the HTTP Soruce!", 500)
-			return nil
-		}
+	// Initialize or update as necessary
+	lqt, ok := quicktime_store.Get(node.trimPath)
+	if !ok {
+		node.updateMutex.Lock()
+		lqt, ok = quicktime_store.Get(node.trimPath)
+		if !ok {
+			fs, err := lazyfs.OpenHttpSource(uri)
+			if err != nil {
+				http.Error(w, "Something's went boom opening the HTTP Soruce!", 500)
+				return nil
+			}
 
-		lqt, err = quicktime_store.AddEntry(node.trimPath, fs)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Something's went boom parsing the quicktime file: %s", err.Error()), 500)
-			return nil
+			lqt, err = quicktime_store.Update(node.trimPath, fs)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Something's went boom parsing the quicktime file: %s", err.Error()), 500)
+				return nil
+			}
 		}
+		node.updateMutex.Unlock()
 	}
 
 	if len(path) == 0 {

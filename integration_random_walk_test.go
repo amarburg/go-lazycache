@@ -13,7 +13,7 @@ import "errors"
 
 import "testing"
 
-var randomWalkCount = flag.Int("random-walk-count", 10, "Number of random walk queries to make")
+var randomWalkCount = flag.Int("random-walk-count", 50, "Number of random walk queries to make")
 var randomWalkParallelism = flag.Int("random-walk-parallelism", 5, "Parallelism of random walk queries")
 
 func TestRandomWalk(t *testing.T) {
@@ -28,7 +28,7 @@ func TestRandomWalk(t *testing.T) {
 	}
 }
 
-var urls = make(chan string, *randomWalkCount)
+var urls = make(chan string, *randomWalkCount*2)
 var out = make(chan bool)
 
 func RandomWalk(count, parallelism int) error {
@@ -37,14 +37,18 @@ func RandomWalk(count, parallelism int) error {
 		go RandomWalkQuery()
 	}
 
+	urls <- "http://localhost:5000/org/oceanobservatories/rawdata/files/RS03ASHS/PN03B/06-CAMHDA301/"
 	urls <- "http://localhost:5000/org/oceanobservatories/rawdata/files/"
 
 	i := 0
 	for {
-		fmt.Printf("Wait for task to complete %d ...", i)
+		fmt.Printf("Wait for task %d to complete ...", i)
 		resp := <-out // wait for one task to complete
+
+		// Always seed the channel with another url, just in case
+		urls <- "http://localhost:5000/org/oceanobservatories/rawdata/files/"
+
 		i++
-		fmt.Printf("Done\n")
 
 		if !resp {
 			return errors.New("Error from child")
@@ -66,31 +70,32 @@ func RandomWalkQuery() {
 			fmt.Printf("%d: ERROR: %s\n", url, err)
 			fmt.Printf("Error making request: %s\n", err.Error())
 			out <- false
-		} else {
-			defer resp.Body.Close()
-			// body, _ := ioutil.ReadAll(resp.Body)
-			// fmt.Printf("%d: RESPONSE: %v\n%s\n", i, resp, body)
+			return
 
-			// Parse response
-			decoder := json.NewDecoder(resp.Body)
-			var listing listing_store.DirListing
-
-			if err := decoder.Decode( &listing ); err == nil {
-				fmt.Printf("Has %d directories\n", len(listing.Directories))
-
-				if len(listing.Directories) > 0 {
-
-				urls <- url + listing.Directories[rand.Intn(len(listing.Directories))]
-				urls <- url + listing.Directories[rand.Intn(len(listing.Directories))]
-			}
-
-				fmt.Println("Good response")
-				out <- true
-			} else {
-				fmt.Println("Error reading response: %s\n", err.Error())
-				out <- false
-			}
 		}
 
+		defer resp.Body.Close()
+		// body, _ := ioutil.ReadAll(resp.Body)
+		// fmt.Printf("%d: RESPONSE: %v\n%s\n", i, resp, body)
+
+		// Parse response
+		decoder := json.NewDecoder(resp.Body)
+		var listing listing_store.DirListing
+
+		if err := decoder.Decode(&listing); err != nil {
+			fmt.Println("Error reading response: %s\n", err.Error())
+			out <- false
+			return
+		}
+		//fmt.Printf("Has %d directories\n", len(listing.Directories))
+
+		if len(listing.Directories) > 0 {
+
+			urls <- url + listing.Directories[rand.Intn(len(listing.Directories))]
+			urls <- url + listing.Directories[rand.Intn(len(listing.Directories))]
+		}
+
+		//fmt.Println("Good response")
+		out <- true
 	}
 }
