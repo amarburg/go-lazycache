@@ -3,21 +3,20 @@
 package main
 
 import (
- "github.com/amarburg/go-lazycache/stress_test"
+ stress "github.com/amarburg/go-lazycache-benchmarking"
  "testing"
 )
 
-
-
 func TestRandomWalk(t *testing.T) {
-	flag.Parse()
 
 	server := StartLazycacheServer("127.0.0.1", 5000)
 	defer server.Stop()
 
 	AddMirror(OOIRawDataRootURL)
 
-	err := stress_test.RandomWalk("127.0.0.1:5000")
+	err := stress.RandomWalk( stress.AddUrl("http://127.0.0.1:5000/org/oceanobservatories/rawdata/files/"),
+ 													stress.SetCount( 100 ),
+													stress.SetParallelism( 5 ) )
 	if err != nil {
 		t.Error(err)
 	}
