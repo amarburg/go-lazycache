@@ -16,10 +16,10 @@ var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/files/"
 func main() {
 
 	var (
-		port          = flag.Int("port", 5000, "Network port")
-		bind          = flag.String("bind", "127.0.0.1", "Network interface to bind")
-		image_store   = flag.String("image-store", "", "")
-		google_bucket = flag.String("image-store-bucket", "", "")
+		port          = flag.Int("port", 5000, "Network port to listen on (default: 5000)")
+		bind          = flag.String("bind", "0.0.0.0", "Network interface to bind to (defaults to 0.0.0.0)")
+		image_store   = flag.String("image-store", "", "Type of image store (none, google)")
+		google_bucket = flag.String("image-store-bucket", "", "Bucket used for Google image store")
 	)
 	flag.Parse()
 
@@ -82,7 +82,6 @@ func ConfigureImageStore(store_type string, bucket string) {
 	case "", "none":
 		image_store.DefaultImageStore = image_store.NullImageStore{}
 	case "google":
-		fmt.Printf("Creating Google image store in bucket \"%s\"\n", bucket)
 		image_store.DefaultImageStore = image_store.CreateGoogleStore(bucket)
 	}
 }
