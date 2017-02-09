@@ -7,6 +7,8 @@ import (
 	"golang.org/x/oauth2/google"
 	"io"
 	"fmt"
+  kitlog "github.com/go-kit/kit/log"
+	"os"
 )
 
 
@@ -71,6 +73,9 @@ func (store GoogleImageStore) Retrieve(key string) (io.Reader, error) {
 }
 
 func CreateGoogleStore( bucket string ) (GoogleImageStore){
+	logger := kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stderr))
+	logger  = kitlog.NewContext(logger).With("module", "GoogleImageStore")
+
 
   store := GoogleImageStore{}
 
@@ -80,6 +85,9 @@ func CreateGoogleStore( bucket string ) (GoogleImageStore){
 	store.ctx = context.Background()
 
 	cred,err := google.FindDefaultCredentials( store.ctx, "https://www.googleapis.com/auth/cloud-platform" )
+	if err != nil {
+		logger.Log("tag","error","msg",fmt.Sprintf("Credential error: %s", err.Error()))
+	}
 	store.client, err = storage.NewClient(store.ctx,
 																				option.WithTokenSource(cred.TokenSource) )
 	if err != nil {
