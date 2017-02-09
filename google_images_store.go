@@ -71,9 +71,8 @@ func (store GoogleImageStore) Retrieve(key string) (io.Reader, error) {
 	// }
 }
 
-func CreateGoogleStore( bucket string ) (GoogleImageStore){
-	logger := kitlog.NewContext(DefaultLogger).With("module", "GoogleImageStore")
-
+func CreateGoogleStore( bucket string, logger kitlog.Logger  ) (GoogleImageStore){
+	logger = kitlog.NewContext(logger).With("module", "GoogleImageStore")
 
   store := GoogleImageStore{}
 
@@ -84,7 +83,10 @@ func CreateGoogleStore( bucket string ) (GoogleImageStore){
 
 	cred,err := google.FindDefaultCredentials( store.ctx, "https://www.googleapis.com/auth/cloud-platform" )
 	if err != nil {
-		logger.Log("tag","error","msg",fmt.Sprintf("Credential error: %s", err.Error()))
+		logger.Log("level","info",
+								"tag","auth_error",
+								"msg",fmt.Sprintf("Credential error: %s", err.Error()))
+
 	}
 	store.client, err = storage.NewClient(store.ctx,
 																				option.WithTokenSource(cred.TokenSource) )

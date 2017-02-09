@@ -6,6 +6,7 @@ import (
        "net/http"
        "net/url"
        "strings"
+       kitlog "github.com/go-kit/kit/log"
 )
 
 func StartLazycacheServer(bind string, port int) *stoppable_http_server.SLServer {
@@ -44,11 +45,11 @@ func AddMirror(serverAddr string) {
 	//http.ListenAndServe(serverAddr, nil)
 }
 
-func ConfigureImageStore(store_type string, bucket string) {
+func ConfigureImageStore(store_type string, bucket string, logger kitlog.Logger) {
 	switch strings.ToLower(store_type) {
 	case "", "none":
 		 DefaultImageStore = NullImageStore{}
 	case "google":
-	   DefaultImageStore = CreateGoogleStore(bucket)
+	   DefaultImageStore = CreateGoogleStore(bucket, logger)
 	}
 }

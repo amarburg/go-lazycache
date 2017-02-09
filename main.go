@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	kitlog "github.com/go-kit/kit/log"
+	"os"
 )
 
 var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/files/"
@@ -16,6 +18,9 @@ func main() {
 	)
 	flag.Parse()
 
+	defaultLogger := kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stderr))
+
+
 	//config,err := LoadLazyCacheConfig( *configFileFlag )
 
 	// if err != nil {
@@ -24,7 +29,7 @@ func main() {
 	// }
 
 	//fmt.Println(config)
-	ConfigureImageStore(*image_store, *google_bucket)
+	ConfigureImageStore(*image_store, *google_bucket, defaultLogger)
 
 	server := StartLazycacheServer(*bind, *port)
 	defer server.Stop()
