@@ -1,4 +1,4 @@
-package image_store
+package main
 
 import (
 	"cloud.google.com/go/storage"
@@ -7,8 +7,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"io"
 	"fmt"
-  kitlog "github.com/go-kit/kit/log"
-	"os"
+	kitlog "github.com/go-kit/kit/log"
 )
 
 
@@ -73,8 +72,7 @@ func (store GoogleImageStore) Retrieve(key string) (io.Reader, error) {
 }
 
 func CreateGoogleStore( bucket string ) (GoogleImageStore){
-	logger := kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stderr))
-	logger  = kitlog.NewContext(logger).With("module", "GoogleImageStore")
+	logger := kitlog.NewContext(DefaultLogger).With("module", "GoogleImageStore")
 
 
   store := GoogleImageStore{}

@@ -13,7 +13,7 @@ import "bytes"
 
 import "github.com/amarburg/go-lazyfs"
 import "github.com/amarburg/go-lazycache/quicktime_store"
-import "github.com/amarburg/go-lazycache/image_store"
+
 
 import "github.com/amarburg/go-lazyquicktime"
 
@@ -103,7 +103,7 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 
 	UUID := req.URL.Path + ".png"
 
-	url, ok := image_store.Url(UUID)
+	url, ok := DefaultImageStore.Url(UUID)
 
 	if ok {
 		fmt.Printf("Image %s exists in the Image store at %s", UUID, url)
@@ -125,7 +125,7 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 		imgReader := bytes.NewReader(buffer.Bytes())
 
 		// write image to Image store
-		image_store.Store(UUID, imgReader)
+		DefaultImageStore.Store(UUID, imgReader)
 
 		//fmt.Println(buffer)
 		imgReader.Seek(0, io.SeekStart)

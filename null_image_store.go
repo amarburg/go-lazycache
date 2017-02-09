@@ -1,4 +1,4 @@
-package image_store
+package main
 
 // import "cloud.google.com/go/storage"
 // import "golang.org/x/net/context"

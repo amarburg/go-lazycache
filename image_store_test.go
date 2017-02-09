@@ -1,4 +1,4 @@
-package image_store
+package main
 
 import "testing"
 
