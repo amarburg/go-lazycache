@@ -18,8 +18,8 @@ func main() {
 	var (
 		port          = flag.Int("port", 5000, "Network port")
 		bind          = flag.String("bind", "127.0.0.1", "Network interface to bind")
-		image_store   = flag.String("image_store", "", "")
-		google_bucket = flag.String("image_store_bucket", "", "")
+		image_store   = flag.String("image-store", "", "")
+		google_bucket = flag.String("image-store-bucket", "", "")
 	)
 	flag.Parse()
 
