@@ -13,20 +13,24 @@ import (
 var RandomWalkCount = flag.Int("random-walk-count", 50, "Number of random walk queries to make")
 var RandomWalkParallelism = flag.Int("random-walk-parallelism", 5, "Parallelism of random walk queries")
 
-var urls = make(chan string, *RandomWalkCount*2)
-var out = make(chan bool)
-
 func RandomWalk( host string ) error {
+
+  var urls = make(chan string, *RandomWalkCount*2 )
+  var out = make(chan bool)
 
   count := *RandomWalkCount
   parallelism := *RandomWalkParallelism
 
+  baseurl := fmt.Sprintf("http://%s/org/oceanobservatories/rawdata/files/", host )
+
+
 	for i := 0; i < parallelism; i++ {
-		go RandomWalkQuery()
+		go RandomWalkQuery(urls,out, baseurl)
+    urls <- baseurl 
 	}
 
-	urls <- fmt.Sprintf("http://%s/org/oceanobservatories/rawdata/files/RS03ASHS/PN03B/06-CAMHDA301/", host )
-	urls <- fmt.Sprintf("http://%s/org/oceanobservatories/rawdata/files/", host )
+
+	//urls <- fmt.Sprintf("http://%s/org/oceanobservatories/rawdata/files/RS03ASHS/PN03B/06-CAMHDA301/", host )
 
 	i := 0
 	for {
@@ -34,7 +38,7 @@ func RandomWalk( host string ) error {
 		resp := <-out // wait for one task to complete
 
 		// Always seed the channel with another url, just in case
-		urls <- fmt.Sprintf("http://%s/org/oceanobservatories/rawdata/files/",host)
+		//urls <- fmt.Sprintf("http://%s/org/oceanobservatories/rawdata/files/",host)
 
 		i++
 
@@ -47,7 +51,7 @@ func RandomWalk( host string ) error {
 
 }
 
-func RandomWalkQuery() {
+func RandomWalkQuery(urls chan string, out chan bool, baseurl string) {
 	fmt.Println("In random walker")
 	for url := range urls {
 
@@ -80,8 +84,10 @@ func RandomWalkQuery() {
 		if len(listing.Directories) > 0 {
 
 			urls <- url + listing.Directories[rand.Intn(len(listing.Directories))]
-			urls <- url + listing.Directories[rand.Intn(len(listing.Directories))]
-		}
+			//urls <- url + listing.Directories[rand.Intn(len(listing.Directories))]
+		} else {
+      urls <- baseurl
+    }
 
 		//fmt.Println("Good response")
 		out <- true
