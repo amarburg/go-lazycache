@@ -1,5 +1,0 @@
-root_url: https://rawdata.oceanobservatories.org/
-server_ip:  127.0.0.1
-image_store:
-  type:  google
-  bucket: image-store-test
