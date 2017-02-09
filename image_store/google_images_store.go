@@ -36,7 +36,7 @@ func (store GoogleImageStore) Store(key string, data io.Reader) {
 	w := obj.NewWriter(store.ctx)
 	io.Copy(w, data)
 	if err := w.Close(); err != nil {
-		// TODO: Handle error.
+		fmt.Printf("Error storing key %s to bucket: %s\n", key, err.Error() )
 	}
 
 	_,err := obj.Update(store.ctx, storage.ObjectAttrsToUpdate{
@@ -71,7 +71,7 @@ func CreateGoogleStore( bucket string ) (GoogleImageStore){
 
   store := GoogleImageStore{}
 
-  fmt.Printf("Creating Google images store to bucket \"%s\"", bucket)
+  fmt.Printf("Creating Google image store in bucket \"%s\"", bucket)
 
 	var err error
 	store.ctx = context.Background()
