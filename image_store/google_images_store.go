@@ -1,9 +1,13 @@
 package image_store
 
-import "cloud.google.com/go/storage"
-import "golang.org/x/net/context"
-import "io"
-import "fmt"
+import (
+	"cloud.google.com/go/storage"
+	"google.golang.org/api/option"
+  "golang.org/x/net/context"
+	"golang.org/x/oauth2/google"
+	"io"
+	"fmt"
+)
 
 
 type GoogleImageStore struct {
@@ -14,7 +18,6 @@ type GoogleImageStore struct {
 }
 
 func (store GoogleImageStore) Has(key string) bool {
-
 	return false
 }
 
@@ -75,7 +78,10 @@ func CreateGoogleStore( bucket string ) (GoogleImageStore){
 
 	var err error
 	store.ctx = context.Background()
-	store.client, err = storage.NewClient(store.ctx)
+
+	cred,err := google.FindDefaultCredentials( store.ctx, "https://www.googleapis.com/auth/cloud-platform" )
+	store.client, err = storage.NewClient(store.ctx,
+																				option.WithTokenSource(cred.TokenSource) )
 	if err != nil {
 		panic(fmt.Sprintf("Error opening storage client: %s", err.Error()))
 	}
