@@ -2,24 +2,12 @@ package lazycache
 
 import (
        "fmt"
-       "github.com/amarburg/go-stoppable-http-server"
-       "net/http"
        "net/url"
        "strings"
        kitlog "github.com/go-kit/kit/log"
 )
 
-func StartLazycacheServer(bind string, port int) *stoppable_http_server.SLServer {
-	http.DefaultServeMux = http.NewServeMux()
-	http.HandleFunc("/", IndexHandler)
 
-	server := stoppable_http_server.StartServer(func(config *stoppable_http_server.HttpConfig) {
-		config.Host = bind
-		config.Port = port
-	})
-
-	return server
-}
 
 func AddMirror(serverAddr string) {
 

@@ -76,7 +76,7 @@ func CreateGoogleStore( bucket string, logger kitlog.Logger  ) (GoogleImageStore
 
   store := GoogleImageStore{}
 
-  fmt.Printf("Creating Google image store in bucket \"%s\"", bucket)
+  fmt.Printf("Creating Google image store in bucket \"%s\"\n", bucket)
 
 	var err error
 	store.ctx = context.Background()

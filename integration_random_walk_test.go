@@ -1,6 +1,6 @@
 // +build integration
 
-package main
+package lazycache
 
 import (
  stress "github.com/amarburg/go-lazycache-benchmarking"

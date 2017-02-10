@@ -15,8 +15,7 @@ build:
     - script:
         name: go build
         code: |
-          go build
-          go build github.com/amarburg/go-lazycache/go-lazycache
+          go build .
 
     # Test the project
     - script:

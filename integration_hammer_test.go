@@ -1,6 +1,6 @@
 // +build integration
 
-package main
+package lazycache
 
 import "net/http"
 import "fmt"
