@@ -5,9 +5,12 @@ package main
 import (
  stress "github.com/amarburg/go-lazycache-benchmarking"
  "testing"
+ "math/rand"
+ "time"
 )
 
 func TestRandomWalk(t *testing.T) {
+	rand.Seed( time.Now().UTC().UnixNano())
 
 	server := StartLazycacheServer("127.0.0.1", 5000)
 	defer server.Stop()
