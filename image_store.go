@@ -1,4 +1,4 @@
-package main
+package lazycache
 
 // import "cloud.google.com/go/storage"
 // import "golang.org/x/net/context"
@@ -14,7 +14,7 @@ type ImageStore interface {
 }
 
 var DefaultImageStore ImageStore = NullImageStore{}
-// 
+//
 // // Singletons which wrap the
 // func Has(key string) bool {
 // 	return DefaultImageStore.Has(key)

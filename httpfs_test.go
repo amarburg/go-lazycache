@@ -1,4 +1,4 @@
-package main
+package lazycache
 
 import "testing"
 import "net/url"

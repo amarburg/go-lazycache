@@ -1,4 +1,4 @@
-package main
+package lazycache
 
 import "fmt"
 import "net/http"

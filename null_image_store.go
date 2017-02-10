@@ -1,4 +1,4 @@
-package main
+package lazycache
 
 // import "cloud.google.com/go/storage"
 // import "golang.org/x/net/context"

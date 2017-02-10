@@ -1,4 +1,4 @@
-package main
+package lazycache
 
 import "strings"
 import "fmt"
