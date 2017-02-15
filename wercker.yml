@@ -9,7 +9,7 @@ build:
     - script:
         name: go get
         code: |
-          go get -t .
+          go get -t --tags integration .
 
     # Build the project
     - script:
