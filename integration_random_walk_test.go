@@ -7,7 +7,23 @@ import (
  "testing"
  "math/rand"
  "time"
+ "net/http"
+ "github.com/amarburg/go-stoppable-http-server"
 )
+
+var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/files/"
+
+func StartLazycacheServer(bind string, port int) *stoppable_http_server.SLServer {
+	http.DefaultServeMux = http.NewServeMux()
+	http.HandleFunc("/", IndexHandler)
+
+	server := stoppable_http_server.StartServer(func(config *stoppable_http_server.HttpConfig) {
+		config.Host = bind
+		config.Port = port
+	} )
+
+	return server
+}
 
 func TestRandomWalk(t *testing.T) {
 	rand.Seed( time.Now().UTC().UnixNano())
@@ -17,9 +33,11 @@ func TestRandomWalk(t *testing.T) {
 
 	AddMirror(OOIRawDataRootURL)
 
-	err := stress.RandomWalk( stress.AddUrl("http://127.0.0.1:5000/org/oceanobservatories/rawdata/files/"),
- 													stress.SetCount( 100 ),
-													stress.SetParallelism( 5 ) )
+  settings := stress.NewSettings()
+  settings.SetCount( 100 )
+  settings.SetParallelism( 5 )
+	err := stress.RandomWalk( *settings, "http://127.0.0.1:5000/v1/org/oceanobservatories/rawdata/files/" )
+
 	if err != nil {
 		t.Error(err)
 	}

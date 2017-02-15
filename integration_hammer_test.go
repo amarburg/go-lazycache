@@ -30,7 +30,7 @@ func HammerServer(count int) {
 }
 
 func QueryServer(i int, c chan int) {
-	resp, err := http.Get("http://127.0.0.1:5000/org/oceanobservatories/rawdata/files/RS03ASHS/PN03B/06-CAMHDA301/2017/01/01/CAMHDA301-20170101T235000.mov")
+	resp, err := http.Get("http://127.0.0.1:5000/v1/org/oceanobservatories/rawdata/files/RS03ASHS/PN03B/06-CAMHDA301/2017/01/01/CAMHDA301-20170101T235000.mov")
 	if err != nil {
 		fmt.Printf("%d: ERROR: %v\n", i, err)
 	} else {
