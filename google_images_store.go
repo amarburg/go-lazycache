@@ -75,8 +75,8 @@ func (store GoogleImageStore) Statistics() ( interface {} ) {
 	return struct{
 			Type string
 		}{
-			Type: "google_cloud_storage"
-	}
+			Type: "google_cloud_storage",
+		}
 }
 
 func CreateGoogleStore( bucket string, logger kitlog.Logger  ) (GoogleImageStore){
