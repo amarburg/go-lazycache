@@ -71,6 +71,14 @@ func (store GoogleImageStore) Retrieve(key string) (io.Reader, error) {
 	// }
 }
 
+func (store GoogleImageStore) Statistics() ( interface {} ) {
+	return struct{
+			Type string
+		}{
+			Type: "google_cloud_storage"
+	}
+}
+
 func CreateGoogleStore( bucket string, logger kitlog.Logger  ) (GoogleImageStore){
 	logger = kitlog.NewContext(logger).With("module", "GoogleImageStore")
 

@@ -29,9 +29,9 @@ func Update( key interface{}, listing DirListing ) bool {
 	return DefaultListingStore.Update( key, listing )
 }
 
-
-
-
+func Statistics() interface{} {
+	return DefaultListingStore.Statistics()
+}
 
 func (store *ListingMap) Get( key interface{} ) (DirListing, bool) {
 	dir,err := store.store[key]
@@ -42,4 +42,12 @@ func (store *ListingMap) Get( key interface{} ) (DirListing, bool) {
 func (store *ListingMap) Update( key interface{}, listing DirListing ) bool {
 	store.store[key] = listing
 	return true
+}
+
+func (store *ListingMap) Statistics() (interface{} ) {
+	return struct{
+      NumEntries   int
+    }{
+      NumEntries: len( store.store ),
+  }
 }

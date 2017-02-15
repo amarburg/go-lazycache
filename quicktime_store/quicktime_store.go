@@ -34,7 +34,19 @@ func Update( key string, fs lazyfs.FileSource ) (*lazyquicktime.LazyQuicktime,er
 }
 
 
+func Statistics() (interface{} ) {
+	return DefaultQuicktimeStore.Statistics()
+}
+
 func Get( key string ) (*lazyquicktime.LazyQuicktime, bool) {
   entry,ok := DefaultQuicktimeStore.store[ key ]
   return entry, ok
+}
+
+func (store *QuicktimeStore) Statistics() (interface{} ) {
+	return struct{
+      NumEntries   int
+    }{
+      NumEntries: len( store.store ),
+  }
 }

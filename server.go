@@ -4,10 +4,16 @@ import (
        "fmt"
        "net/url"
        "strings"
+       "net/http"
        kitlog "github.com/go-kit/kit/log"
 )
 
 const ApiVersion = "v1"
+
+func RegisterDefaultHandlers() {
+  http.HandleFunc("/v1/statistics/", StatisticsHandler )
+  http.HandleFunc("/", IndexHandler)
+}
 
 
 func AddMirror(serverAddr string) {
@@ -26,12 +32,8 @@ func AddMirror(serverAddr string) {
 	root := fmt.Sprintf("/%s/%s%s", ApiVersion, strings.Join(splitHN, "/"), fs.Uri.Path)
 	MakeRootNode(fs, root)
 
+
 	RootMap[serverAddr] = root
-
-	// fmt.Printf("Starting http handler at http://%s/\n", serverAddr)
-	// fmt.Printf("Fs at http://%s%s\n", serverAddr, root )
-
-	//http.ListenAndServe(serverAddr, nil)
 }
 
 func ConfigureImageStore(store_type string, bucket string, logger kitlog.Logger) {
