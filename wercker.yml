@@ -23,10 +23,10 @@ build:
         code: |
           go test -tags integration
 
-trigger-deploy:
+trigger-app:
   ## Triggers the lazycache-deploy/build pipeline
   steps:
     - amarburg/trigger-build:
       token: $WERCKER_BEARER_TOKEN
-      pipeline-id: 58813bb5bb0e020100e9525e
-      message: Build triggered by deploy-lazycache commit $WERCKER_GIT_COMMIT
+      pipeline-id: 589df0685b629501000732cd
+      message: Build triggered by go-lazycache-app commit $WERCKER_GIT_COMMIT
