@@ -7,6 +7,7 @@ import (
        kitlog "github.com/go-kit/kit/log"
 )
 
+const ApiVersion = "v1"
 
 
 func AddMirror(serverAddr string) {
@@ -22,7 +23,7 @@ func AddMirror(serverAddr string) {
 
 	// Reverse hostname
 	splitHN := MungeHostname(fs.Uri.Host)
-	root := fmt.Sprintf("/%s%s", strings.Join(splitHN, "/"), fs.Uri.Path)
+	root := fmt.Sprintf("/%s/%s%s", ApiVersion, strings.Join(splitHN, "/"), fs.Uri.Path)
 	MakeRootNode(fs, root)
 
 	RootMap[serverAddr] = root
