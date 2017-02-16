@@ -1,4 +1,4 @@
-package quicktime_store
+package lazycache
 
 //import "net/url"
 

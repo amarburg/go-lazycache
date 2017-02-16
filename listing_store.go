@@ -1,4 +1,6 @@
-package listing_store
+package lazycache
+
+import prom "github.com/prometheus/client_golang/prometheus"
 
 type DirListing struct {
 	Path        string
@@ -19,35 +21,34 @@ var DefaultListingStore = &ListingMap{ store: make( map[interface{}]DirListing )
 
 // Convenience wrappers around DefaultListingStore
 
-func Get( key interface{} ) (DirListing, bool) {
-	dir,err := DefaultListingStore.store[key]
-	return dir,err
-}
-
-
-func Update( key interface{}, listing DirListing ) bool {
-	return DefaultListingStore.Update( key, listing )
-}
-
-func Statistics() interface{} {
-	return DefaultListingStore.Statistics()
-}
+// func Get( key interface{} ) (DirListing, bool) {
+// 	dir,err := DefaultListingStore.store[key]
+// 	return dir,err
+// }
+//
+//
+// func Update( key interface{}, listing DirListing ) bool {
+// 	return DefaultListingStore.Update( key, listing )
+// }
+//
+// func Statistics() interface{} {
+// 	return DefaultListingStore.Statistics()
+// }
 
 func (store *ListingMap) Get( key interface{} ) (DirListing, bool) {
 	dir,err := store.store[key]
+	PromCacheRequests.With( prom.Labels{"store":"listing"}).Inc()
+	if err {
+		PromCacheMisses.With( prom.Labels{"store":"listing"}).Inc()
+	}
 	return dir,err
 }
 
 
 func (store *ListingMap) Update( key interface{}, listing DirListing ) bool {
 	store.store[key] = listing
-	return true
-}
 
-func (store *ListingMap) Statistics() (interface{} ) {
-	return struct{
-      NumEntries   int
-    }{
-      NumEntries: len( store.store ),
-  }
+	PromCacheSize.With( prom.Labels{"store":"listing"}).Set( float64(len(store.store)) )
+
+	return true
 }

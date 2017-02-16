@@ -11,7 +11,7 @@ type ImageStore interface {
 	 Url(key string) (string, bool)
 	 Store(key string, data io.Reader)
 	 Retrieve(key string) (io.Reader, error)
-	 Statistics() ( interface {} )
+	//  Statistics() ( interface {} )
 }
 
 var DefaultImageStore ImageStore = NullImageStore{}

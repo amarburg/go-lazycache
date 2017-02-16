@@ -12,8 +12,6 @@ import "image/png"
 import "bytes"
 
 import "github.com/amarburg/go-lazyfs"
-import "github.com/amarburg/go-lazycache/quicktime_store"
-
 
 import "github.com/amarburg/go-lazyquicktime"
 
@@ -24,10 +22,10 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	uri.Path += node.Path
 
 	// Initialize or update as necessary
-	lqt, ok := quicktime_store.Get(node.trimPath)
+	lqt, ok := Get(node.trimPath)
 	if !ok {
 		node.updateMutex.Lock()
-		lqt, ok = quicktime_store.Get(node.trimPath)
+		lqt, ok = Get(node.trimPath)
 		if !ok {
 			fs, err := lazyfs.OpenHttpSource(uri)
 			if err != nil {
@@ -35,7 +33,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 				return nil
 			}
 
-			lqt, err = quicktime_store.Update(node.trimPath, fs)
+			lqt, err = Update(node.trimPath, fs)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Something's went boom parsing the quicktime file: %s", err.Error()), 500)
 				return nil

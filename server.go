@@ -6,13 +6,15 @@ import (
        "strings"
        "net/http"
        kitlog "github.com/go-kit/kit/log"
+       	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const ApiVersion = "v1"
 
 func RegisterDefaultHandlers() {
-  http.HandleFunc("/v1/statistics/", StatisticsHandler )
   http.HandleFunc("/", IndexHandler)
+
+	http.Handle("/metrics", promhttp.Handler())
 }
 
 
