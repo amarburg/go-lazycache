@@ -6,8 +6,6 @@ import "net/http"
 import "encoding/json"
 import "time"
 
-import "github.com/amarburg/go-lazycache/listing_store"
-import "github.com/amarburg/go-lazycache/quicktime_store"
 
 var startTime = time.Now()
 
