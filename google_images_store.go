@@ -16,18 +16,26 @@ type GoogleImageStore struct {
 	client *storage.Client
 	bucket *storage.BucketHandle
 	//  index  ImageStoreMap
+
+	Stats 		struct{
+		cacheRequests			int
+		cacheMisses   int
+	}
 }
 
 func (store GoogleImageStore) Has(key string) bool {
 	return false
 }
 
-func (store GoogleImageStore) Url(key string) (string, bool) {
+func (store *GoogleImageStore) Url(key string) (string, bool) {
 
 	obj := store.bucket.Object(key)
 	attr, err := obj.Attrs(store.ctx)
 
+store.Stats.cacheRequests++
+
 	if err != nil {
+		store.Stats.cacheMisses++
 		return "", false
 	}
 
@@ -74,15 +82,19 @@ func (store GoogleImageStore) Retrieve(key string) (io.Reader, error) {
 func (store GoogleImageStore) Statistics() ( interface {} ) {
 	return struct{
 			Type string
+			CacheRequests			int `json: "cache_requests"`
+			CacheMisses   int `json: "cache_misses"`
 		}{
 			Type: "google_cloud_storage",
+			CacheRequests:  store.Stats.cacheRequests,
+			CacheMisses:  store.Stats.cacheMisses,
 		}
 }
 
-func CreateGoogleStore( bucket string, logger kitlog.Logger  ) (GoogleImageStore){
+func CreateGoogleStore( bucket string, logger kitlog.Logger  ) (*GoogleImageStore){
 	logger = kitlog.NewContext(logger).With("module", "GoogleImageStore")
 
-  store := GoogleImageStore{}
+  store := &GoogleImageStore{}
 
   fmt.Printf("Creating Google image store in bucket \"%s\"\n", bucket)
 

@@ -36,7 +36,11 @@ func StatisticsHandler(w http.ResponseWriter, req *http.Request) {
   stats.QuicktimeStore = quicktime_store.Statistics()
 
   for root,_ := range RootMap {
-    stats.Roots[root] = struct{}{}
+    stats.Roots[root] = struct{
+      Fs  interface{}   `json: "fs"`
+      }{
+      Fs: RootMap[root].node.Fs.Statistics,
+    }
   }
 
 		b, err := json.MarshalIndent(stats, "", "  ")

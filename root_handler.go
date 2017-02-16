@@ -4,8 +4,6 @@ import "fmt"
 import "net/http"
 import "encoding/json"
 
-var RootMap = make(map[string]string)
-
 func IndexHandler(w http.ResponseWriter, req *http.Request) {
 
 //	if jsonExtension.MatchString(req.URL.Path) {

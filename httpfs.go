@@ -11,6 +11,10 @@ import "github.com/amarburg/go-lazycache/listing_store"
 
 type HttpFS struct {
 	Uri url.URL
+	Statistics struct{
+		HttpRequests	int  `json: http_requests`
+		ErrorResponses int  `json: error_responses`
+	}
 }
 
 const (
@@ -52,6 +56,7 @@ func (fs *HttpFS) ReadHttpDir(path string) (listing_store.DirListing, error) {
 
 	fmt.Printf("Querying directory: %s\n", pathUri.String())
 
+	fs.Statistics.HttpRequests++
 	response, err := client.Get(pathUri.String())
 
 	listing := listing_store.DirListing{Path: path,
@@ -61,7 +66,11 @@ func (fs *HttpFS) ReadHttpDir(path string) (listing_store.DirListing, error) {
 
 	//fmt.Println( response, err )
 
-	if response.StatusCode != 200 {
+	if err != nil {
+		fs.Statistics.ErrorResponses++
+		return listing, err
+	} else if response.StatusCode != 200 {
+		fs.Statistics.ErrorResponses++
 		return listing, errors.New(fmt.Sprintf("Got HTTP response %d", response.StatusCode))
 	}
 

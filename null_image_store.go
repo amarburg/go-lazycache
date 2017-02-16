@@ -28,5 +28,9 @@ func (store NullImageStore) Retrieve(key string) (io.Reader, error) {
 }
 
 func (store NullImageStore) Statistics() ( interface {} ) {
-	return struct{}{}
+	return struct{
+			Type string
+		}{
+			Type: "null",
+	}
 }

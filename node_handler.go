@@ -95,6 +95,8 @@ func (parent *Node) MakeNode(path string) *Node {
 	return node
 }
 
+var RootMap = make(map[string]*RootNode)
+
 func MakeRootNode(Fs *HttpFS, root string) {
 	rootNode := &RootNode{
 		node: &Node{
@@ -106,6 +108,10 @@ func MakeRootNode(Fs *HttpFS, root string) {
 	}
 
 	http.Handle(rootNode.node.trimPath, rootNode)
-	rootNode.node.leafFunc = HandleDirectory // Assign leafFunc because we know it's a directory
+	rootNode.node.leafFunc = HandleDirectory
+
+	RootMap[Fs.Uri.String()] = rootNode
+
+// Assign leafFunc because we know it's a directory
 	//rootNode.node.autodetectLeafFunc()
 }

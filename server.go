@@ -31,9 +31,6 @@ func AddMirror(serverAddr string) {
 	splitHN := MungeHostname(fs.Uri.Host)
 	root := fmt.Sprintf("/%s/%s%s", ApiVersion, strings.Join(splitHN, "/"), fs.Uri.Path)
 	MakeRootNode(fs, root)
-
-
-	RootMap[serverAddr] = root
 }
 
 func ConfigureImageStore(store_type string, bucket string, logger kitlog.Logger) {
