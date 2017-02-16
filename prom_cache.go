@@ -23,7 +23,7 @@ var (
 
 	PromCacheSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "cache_size",
-		Help: "",
+		Help: "Number of elements in cache",
 	},
   []string{"store"},
 )

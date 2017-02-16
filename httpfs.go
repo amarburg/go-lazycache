@@ -7,12 +7,11 @@ import "errors"
 import "golang.org/x/net/html"
 import "regexp"
 
+//====
+
+
 type HttpFS struct {
 	Uri url.URL
-	Statistics struct{
-		HttpRequests	int  `json: http_requests`
-		ErrorResponses int  `json: error_responses`
-	}
 }
 
 const (
@@ -54,7 +53,6 @@ func (fs *HttpFS) ReadHttpDir(path string) (DirListing, error) {
 
 	fmt.Printf("Querying directory: %s\n", pathUri.String())
 
-	fs.Statistics.HttpRequests++
 	response, err := client.Get(pathUri.String())
 
 	listing := DirListing{Path: path,
@@ -65,10 +63,8 @@ func (fs *HttpFS) ReadHttpDir(path string) (DirListing, error) {
 	//fmt.Println( response, err )
 
 	if err != nil {
-		fs.Statistics.ErrorResponses++
 		return listing, err
 	} else if response.StatusCode != 200 {
-		fs.Statistics.ErrorResponses++
 		return listing, errors.New(fmt.Sprintf("Got HTTP response %d", response.StatusCode))
 	}
 

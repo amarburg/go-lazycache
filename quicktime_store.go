@@ -4,12 +4,9 @@ package lazycache
 
 import "github.com/amarburg/go-lazyfs"
 import "github.com/amarburg/go-lazyquicktime"
-//import "github.com/amarburg/go-quicktime"
 
+import prom "github.com/prometheus/client_golang/prometheus"
 
-// type QuicktimeEntry struct {
-//   fs      lazyquicktime.LazyQuicktime
-// }
 
 type QuicktimeMap    map[string]*lazyquicktime.LazyQuicktime
 
@@ -28,25 +25,19 @@ func Update( key string, fs lazyfs.FileSource ) (*lazyquicktime.LazyQuicktime,er
   var err error
   DefaultQuicktimeStore.store[ key ],err = lazyquicktime.LoadMovMetadata( fs )
 
+  PromCacheSize.With( prom.Labels{"store":"quicktime"}).Set( float64(len(DefaultQuicktimeStore.store)))
+
   //quicktime.DumpTree( DefaultQuicktimeStore.store[ key ].Tree )
 
   return  DefaultQuicktimeStore.store[ key ], err
 }
 
 
-func Statistics() (interface{} ) {
-	return DefaultQuicktimeStore.Statistics()
-}
-
 func Get( key string ) (*lazyquicktime.LazyQuicktime, bool) {
-  entry,ok := DefaultQuicktimeStore.store[ key ]
-  return entry, ok
-}
-
-func (store *QuicktimeStore) Statistics() (interface{} ) {
-	return struct{
-      NumEntries   int
-    }{
-      NumEntries: len( store.store ),
+  PromCacheRequests.With( prom.Labels{"store":"quicktime"}).Inc()
+  entry,has := DefaultQuicktimeStore.store[ key ]
+  if !has {
+    PromCacheMisses.With( prom.Labels{"store":"quicktime"}).Inc()
   }
+  return entry, has
 }

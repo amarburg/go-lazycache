@@ -36,12 +36,12 @@ var DefaultListingStore = &ListingMap{ store: make( map[interface{}]DirListing )
 // }
 
 func (store *ListingMap) Get( key interface{} ) (DirListing, bool) {
-	dir,err := store.store[key]
+	dir,has := store.store[key]
 	PromCacheRequests.With( prom.Labels{"store":"listing"}).Inc()
-	if err {
+	if !has {
 		PromCacheMisses.With( prom.Labels{"store":"listing"}).Inc()
 	}
-	return dir,err
+	return dir,has
 }
 
 
