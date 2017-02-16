@@ -7,7 +7,7 @@ import (
 var (
 	PromCacheRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "cache_request_total",
+			Name: "cache_requests_total",
 			Help: "Number of cache requests.",
 		},
     []string{"store"},
