@@ -5,7 +5,7 @@ import (
        "net/url"
        "strings"
        "net/http"
-       kitlog "github.com/go-kit/kit/log"
+//       kitlog "github.com/go-kit/kit/log"
        	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -33,13 +33,4 @@ func AddMirror(serverAddr string) {
 	splitHN := MungeHostname(fs.Uri.Host)
 	root := fmt.Sprintf("/%s/%s%s", ApiVersion, strings.Join(splitHN, "/"), fs.Uri.Path)
 	MakeRootNode(fs, root)
-}
-
-func ConfigureImageStore(store_type string, bucket string, logger kitlog.Logger) {
-	switch strings.ToLower(store_type) {
-	case "", "none":
-		 DefaultImageStore = NullImageStore{}
-	case "google":
-	   DefaultImageStore = CreateGoogleStore(bucket, logger)
-	}
 }
