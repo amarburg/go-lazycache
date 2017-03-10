@@ -57,7 +57,7 @@ func ViperConfiguration() {
 
 	viper.BindPFlag("imagestore.bucket", flag.Lookup("image-store-bucket"))
 	viper.BindPFlag("imagestore.localroot", flag.Lookup("image-local-root"))
-	viper.BindPFlag("imagestore.urlroo", flag.Lookup("image-url-root"))
+	viper.BindPFlag("imagestore.urlroot", flag.Lookup("image-url-root"))
 
 
 	flag.Parse()
@@ -66,7 +66,7 @@ func ViperConfiguration() {
 func ConfigureImageStoreFromViper( logger kitlog.Logger ) {
 	switch strings.ToLower( viper.GetString("imagestore" )) {
 	case "", "none":
-		fmt.Printf("Unable to determine type of image store from ", viper.GetString("imagestore" ) )
+		fmt.Printf("Unable to determine type of image store from \"%s\"", viper.GetString("imagestore" ) )
 		 DefaultImageStore = NullImageStore{}
 	case "local":
 			DefaultImageStore = CreateLocalStore(viper.GetString("imagestore.localRoot"),
