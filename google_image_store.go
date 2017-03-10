@@ -91,8 +91,8 @@ func (store GoogleImageStore) Statistics() ( interface {} ) {
 		}
 }
 
-func CreateGoogleStore( bucket string, log kitlog.Logger  ) (*GoogleImageStore){
-	logger := kitlog.With(log, "module", "GoogleImageStore")
+func CreateGoogleStore( bucket string  ) (*GoogleImageStore){
+	logger := kitlog.With(DefaultLogger, "module", "GoogleImageStore")
 
   store := &GoogleImageStore{}
 

@@ -2,14 +2,10 @@ package lazycache
 
 import (
 	"github.com/spf13/viper"
-	kitlog  "github.com/go-kit/kit/log"
 	flag "github.com/spf13/pflag"
 	"fmt"
 	"strings"
 )
-
-var DefaultLogger kitlog.Logger
-
 
 func ViperConfiguration() {
 
@@ -63,16 +59,16 @@ func ViperConfiguration() {
 	flag.Parse()
 }
 
-func ConfigureImageStoreFromViper( logger kitlog.Logger ) {
+func ConfigureImageStoreFromViper() {
 	switch strings.ToLower( viper.GetString("imagestore" )) {
 	case "", "none":
 		fmt.Printf("Unable to determine type of image store from \"%s\"", viper.GetString("imagestore" ) )
 		 DefaultImageStore = NullImageStore{}
 	case "local":
 			DefaultImageStore = CreateLocalStore(viper.GetString("imagestore.localRoot"),
-																						viper.GetString("imagestore.urlRoot"), logger )
+																						viper.GetString("imagestore.urlRoot") )
 	case "google":
-	   DefaultImageStore = CreateGoogleStore(viper.GetString("imagestore.bucket"), logger)
+	   DefaultImageStore = CreateGoogleStore(viper.GetString("imagestore.bucket") )
 	}
 
 }

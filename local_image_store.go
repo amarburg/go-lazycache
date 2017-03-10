@@ -60,12 +60,12 @@ func (store LocalImageStore) Statistics() ( interface {} ) {
 		}
 }
 
-func CreateLocalStore( localRoot string, localUrl string, log kitlog.Logger  ) (*LocalImageStore){
+func CreateLocalStore( localRoot string, localUrl string  ) (*LocalImageStore){
 
   store := &LocalImageStore{
 			LocalRoot: localRoot,
 			UrlRoot: localUrl,
-			logger:  kitlog.With(log, "module", "LocalImageStore"),
+			logger:  kitlog.With(DefaultLogger, "module", "LocalImageStore"),
 	}
 
   fmt.Printf("Creating local image store at \"%s\", exposed at \"%s\"\n", store.LocalRoot, store.UrlRoot)
