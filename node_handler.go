@@ -42,13 +42,7 @@ func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (root *RootNode) Handle(node *Node, path []string, w http.ResponseWriter, req *http.Request) {
-	fmt.Printf("Calling Handle for path %s with (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
-
-	// If I have a leafFunc, I've been assigned a Handler.
-	// if node.leafFunc == nil {
-	// 	// If not, try to autodetect what my job should be
-	// 	node.autodetectLeafFunc()
-	// }
+	//fmt.Printf("Calling Handle for path %s with (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	if node.leafFunc != nil {
 		if recurse := node.leafFunc(node, path, w, req); recurse != nil {

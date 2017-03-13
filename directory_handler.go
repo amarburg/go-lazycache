@@ -7,7 +7,7 @@ import "strings"
 
 
 func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
-	fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
+	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	// Initialize or update as necessary
 	if _, ok := DefaultListingStore.Get(node); !ok {
@@ -24,7 +24,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 	// If there's residual path, they must be children (not a verb)
 	if len(path) > 0 {
 
-		fmt.Printf("%d elements of residual path left, recursing to %s\n", len(path), path[0])
+		//fmt.Printf("%d elements of residual path left, recursing to %s\n", len(path), path[0])
 
 		if child, ok := node.Children[path[0]]; ok && child != nil {
 			return child
@@ -53,7 +53,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 
 			b, err := json.MarshalIndent(listing, "", "  ")
 			if err != nil {
-				fmt.Fprintln(w, "JSON error:", err)
+				DefaultLogger.Log( "level", "error", "msg", fmt.Sprintf( "JSON error:", err) )
 			}
 
 			w.Write(b)
@@ -67,7 +67,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 }
 
 func (node *Node) BootstrapDirectory(listing DirListing) {
-	fmt.Printf("Bootstrapping directory %s\n", node.Path)
+	//fmt.Printf("Bootstrapping directory %s\n", node.Path)
 
 	// Clear any existing children
 	node.Children = make(map[string]*Node)
