@@ -2,14 +2,14 @@ box: amarburg/golang-ffmpeg:wheezy-1.8
 
 build:
   steps:
-    - setup-go-workspace:
-        package-dir: github.com/amarburg/go-lazycache
+    - wercker/setup-go-workspace
+        #package-dir: github.com/amarburg/go-lazycache
 
     # Gets the dependencies
     - script:
         name: go get
         code: |
-          go get -t --tags integration github.com/amarburg/go-lazycache
+          go get -t -tags integration github.com/amarburg/go-lazycache
 
     - wercker/golint
 
