@@ -9,7 +9,8 @@ build:
     - script:
         name: go get
         code: |
-          go get -t github.com/amarburg/go-lazycache
+          go get -t -tags integration github.com/amarburg/go-lazycache
+
 
     #- wercker/golint
 
@@ -23,7 +24,7 @@ build:
     - script:
         name: Run integration tests
         code: |
-          go test 
+          go test -tags integration
 
 trigger-build-of-lazycache-app:
   ## Triggers the lazycache-deploy/build pipeline
