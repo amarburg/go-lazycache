@@ -9,7 +9,7 @@ build:
     - script:
         name: go get
         code: |
-          go get -t --tags integration .
+          go get -t --tags integration github.com/amarburg/go-lazycache
 
     - wercker/golint
 
