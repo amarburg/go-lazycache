@@ -13,8 +13,7 @@ const ApiVersion = "v1"
 
 func RegisterDefaultHandlers() {
   http.HandleFunc("/", IndexHandler)
-
-	http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics/", promhttp.Handler())
 }
 
 

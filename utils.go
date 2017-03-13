@@ -1,12 +1,11 @@
 package lazycache
 
 import "strings"
-import "fmt"
 import "sort"
 
 func MungeHostname(hostname string) []string {
 	splitHN := strings.Split(hostname, ".")
-	fmt.Println(splitHN)
+	// fmt.Println(splitHN)
 
 	for i, j := 0, len(splitHN)-1; i < j; i, j = i+1, j-1 {
 		sort.StringSlice(splitHN).Swap(i, j)
