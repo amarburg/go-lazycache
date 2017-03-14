@@ -1,7 +1,10 @@
 
-
 task :build do
   sh *%w( go build )
+end
+
+task :lint do
+  sh *%w( golint . )
 end
 
 task :test => :build do
