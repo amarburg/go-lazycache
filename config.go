@@ -53,7 +53,6 @@ func ViperConfiguration() {
 
 	viper.BindPFlag("imagestore.bucket", flag.Lookup("image-store-bucket"))
 	viper.BindPFlag("imagestore.localroot", flag.Lookup("image-local-root"))
-	viper.BindPFlag("imagestore.urlroot", flag.Lookup("image-url-root"))
 
 
 	flag.Parse()
@@ -69,7 +68,7 @@ func ConfigureImageStoreFromViper() {
 		 DefaultImageStore = NullImageStore{}
 	case "local":
 			DefaultImageStore = CreateLocalStore(viper.GetString("imagestore.localRoot"),
-																						viper.GetString("imagestore.urlRoot") )
+																						viper.GetString("imagestore.bind") )
 	case "google":
 	   DefaultImageStore = CreateGoogleStore(viper.GetString("imagestore.bucket") )
 	}

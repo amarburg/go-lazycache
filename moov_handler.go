@@ -10,10 +10,13 @@ import "io"
 import "encoding/json"
 import "image/png"
 import "bytes"
+import "regexp"
 
 import "github.com/amarburg/go-lazyfs"
 
 import "github.com/amarburg/go-lazyquicktime"
+
+var leadingNumbers,_ = regexp.Compile("^\\d+")
 
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	//  fmt.Fprintf( w, "Quicktime handler: %s with residual path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
@@ -84,7 +87,7 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 
 	}
 
-	frameNum, err := strconv.Atoi(path[0])
+	frameNum, err := strconv.Atoi( leadingNumbers.FindString(path[0]) )
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error parsing frame number \"%s\"", path[0]), 500)
 		return
@@ -104,10 +107,12 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 	url, ok := DefaultImageStore.Url(UUID)
 
 	if ok {
-		fmt.Printf("Image %s exists in the Image store at %s", UUID, url)
+		DefaultLogger.Log("msg", fmt.Sprintf("Image %s exists in the Image store at %s", UUID, url) )
 		// Set Content-Type or response
 		w.Header().Set("Content-Type", "image/png")
-		http.Redirect(w, req, url, 307)
+		// w.Header().Set("Location", url)
+		DefaultLogger.Log("msg", fmt.Sprintf("Redirecting to %s", url ))
+		http.Redirect(w, req, url, http.StatusTemporaryRedirect)
 
 	} else {
 

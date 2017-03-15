@@ -4,6 +4,8 @@ import (
 	"io"
 	"fmt"
 	"os"
+	"path"
+	"net/http"
 	kitlog "github.com/go-kit/kit/log"
 )
 
@@ -20,8 +22,10 @@ type LocalImageStore struct {
 }
 
 func (store LocalImageStore) Has(key string) bool {
-	_,err := os.Stat( store.LocalRoot + key )
-	return err != nil
+	filename := store.LocalRoot + key
+	DefaultLogger.Log("level","debug","msg", fmt.Sprintf("Checking for \"%s\"", filename ) )
+	_,err := os.Stat( filename )
+	return err == nil
 }
 
 func (store *LocalImageStore) Url(key string) (string, bool) {
@@ -36,8 +40,24 @@ func (store *LocalImageStore) Url(key string) (string, bool) {
 	}
 }
 
+func RecursiveMkdir( dir string ){
+	_,err := os.Stat( dir )
+	if err != nil {
+		RecursiveMkdir( path.Dir( dir ) )
+
+		os.Mkdir( dir, 0755 )
+	}
+}
+
 func (store LocalImageStore) Store(key string, data io.Reader) {
-	f, _ := os.Create( store.LocalRoot + key )
+	filename := store.LocalRoot + key
+	RecursiveMkdir( path.Dir( filename ))
+
+	f, err := os.Create( filename )
+	if err != nil {
+		DefaultLogger.Log("msg", err.Error(), "type", "error")
+	}
+
 	io.Copy(f, data)
 }
 
@@ -60,15 +80,36 @@ func (store LocalImageStore) Statistics() ( interface {} ) {
 		}
 }
 
-func CreateLocalStore( localRoot string, localUrl string  ) (*LocalImageStore){
+func (store LocalImageStore) ServeHTTP(w http.ResponseWriter, r *http.Request)  {
+	localPath := path.Join( store.LocalRoot, r.URL.Path )
+
+	if _,err := os.Stat( localPath ); err != nil {
+		http.Error( w, fmt.Sprintf("Could not find \"%s\"", localPath), 404 )
+	} else {
+		http.ServeFile( w, r, localPath )
+	}
+}
+
+func CreateLocalStore( localRoot string, host string  ) (*LocalImageStore){
+
+	port := 7080
+	addr := fmt.Sprintf("%s:%d", host, port )
 
   store := &LocalImageStore{
 			LocalRoot: localRoot,
-			UrlRoot: localUrl,
+			UrlRoot: "http://" + addr + "/",
 			logger:  kitlog.With(DefaultLogger, "module", "LocalImageStore"),
 	}
 
-  fmt.Printf("Creating local image store at \"%s\", exposed at \"%s\"\n", store.LocalRoot, store.UrlRoot)
+  DefaultLogger.Log("msg",
+		fmt.Sprintf("Creating local image store at \"%s\", exposed at \"%s\"\n", store.LocalRoot, store.UrlRoot) )
+
+	s := &http.Server{
+		Addr:           addr,
+		Handler:        store,
+	}
+
+	go s.ListenAndServe()
 
 	return store
 }
