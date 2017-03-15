@@ -1,4 +1,6 @@
 
+task :default => :test
+
 task :build do
   sh *%w( go build )
 end
