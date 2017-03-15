@@ -15,6 +15,8 @@ func ViperConfiguration() {
 	viper.SetDefault("imagestore", "")
 	viper.SetDefault("imagestore.bucket","camhd-image-cache")
 
+	viper.SetDefault("quicktimestore", "")
+
 	viper.SetConfigName("lazycache")
 	viper.AddConfigPath("/etc/lazycache")
 	viper.AddConfigPath(".")
@@ -40,11 +42,15 @@ func ViperConfiguration() {
 	// )
 	flag.Int("port", 80, "Network port to listen on (default: 8080)")
 	flag.String("bind", "0.0.0.0", "Network interface to bind to (defaults to 0.0.0.0)")
-	flag.String("image-store", "", "Type of image store (none, google)")
 
+	flag.String("image-store", "", "Type of image store (none, local, google)")
 	flag.String("image-store-bucket", "camhd-image-cache", "Bucket used for Google image store")
 	flag.String("image-local-root", "", "Bucket used for Google image store")
 	flag.String("image-url-root", "", "Bucket used for Google image store")
+
+	flag.String("quicktime-store", "", "Type of quicktime store (none, redis)")
+	flag.String("quicktime-store-redis-host", "localhost:6379", "Host used for redis store")
+
 
 
 	viper.BindPFlag("port", flag.Lookup("port"))
@@ -53,6 +59,9 @@ func ViperConfiguration() {
 
 	viper.BindPFlag("imagestore.bucket", flag.Lookup("image-store-bucket"))
 	viper.BindPFlag("imagestore.localroot", flag.Lookup("image-local-root"))
+
+	viper.BindPFlag("quicktimestore", flag.Lookup("quicktime-store"))
+	viper.BindPFlag("quicktimestore.redishost", flag.Lookup("quicktime-store-redis-host"))
 
 
 	flag.Parse()
@@ -72,5 +81,24 @@ func ConfigureImageStoreFromViper() {
 	case "google":
 	   DefaultImageStore = CreateGoogleStore(viper.GetString("imagestore.bucket") )
 	}
+}
 
+func ConfigureQuicktimeStoreFromViper()  {
+
+	switch strings.ToLower( viper.GetString("quicktimestore" )) {
+	default:
+		DefaultLogger.Log("msg","Unable to determine type of image store from \"%s\"", viper.GetString("quicktimestore" ) )
+		 DefaultQuicktimeStore = CreateDefaultQuicktimeStore()
+	case "", "none":
+		DefaultLogger.Log("msg","Using default QuicktimeStore." )
+		DefaultQuicktimeStore = CreateDefaultQuicktimeStore()
+	case "redis":
+		hostname := viper.GetString("quicktimestore.redishost")
+			redis,err := CreateRedisQuicktimeStore( hostname )
+			if err != nil {
+				DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis Quicktime store to host \"%s\"", hostname ) )
+			}
+
+			DefaultQuicktimeStore = redis
+	}
 }

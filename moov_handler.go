@@ -13,7 +13,6 @@ import "bytes"
 import "regexp"
 
 import "github.com/amarburg/go-lazyfs"
-
 import "github.com/amarburg/go-lazyquicktime"
 
 var leadingNumbers,_ = regexp.Compile("^\\d+")
@@ -25,18 +24,18 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	uri.Path += node.Path
 
 	// Initialize or update as necessary
-	lqt, ok := Get(node.trimPath)
+	lqt, ok := DefaultQuicktimeStore.Get(node.trimPath)
 	if !ok {
 		node.updateMutex.Lock()
-		lqt, ok = Get(node.trimPath)
+		lqt, ok = DefaultQuicktimeStore.Get(node.trimPath)
 		if !ok {
 			fs, err := lazyfs.OpenHttpSource(uri)
 			if err != nil {
-				http.Error(w, "Something's went boom opening the HTTP Soruce!", 500)
+				http.Error(w, "Something's went boom opening the HTTP Source!", 500)
 				return nil
 			}
 
-			lqt, err = Update(node.trimPath, fs)
+			lqt, err = DefaultQuicktimeStore.Update(node.trimPath, fs)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Something's went boom parsing the quicktime file: %s", err.Error()), 500)
 				return nil
