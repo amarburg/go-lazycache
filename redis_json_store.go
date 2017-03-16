@@ -7,26 +7,28 @@ import (
   "encoding/json"
 )
 
-import "github.com/amarburg/go-lazyfs"
-import "github.com/amarburg/go-lazyquicktime"
-
 import prom "github.com/prometheus/client_golang/prometheus"
 
 import "github.com/mediocregopher/radix.v2/pool"
 
-const qtPrefix = "qt."
 
-type RedisQuicktimeStore struct {
+type RedisJsonStore struct {
+  prefix    string
   pool      *pool.Pool
 }
 
-func (red *RedisQuicktimeStore) Update( key string, fs lazyfs.FileSource ) (*lazyquicktime.LazyQuicktime,error) {
-  var err error
-metadata,err := lazyquicktime.LoadMovMetadata( fs )
-if err != nil {
-  DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("Error parsing Quicktime metadata for %s: %s", key, err.Error() ) )
-return nil, err
+func (red *RedisJsonStore) makeKey( key string ) string {
+  return red.prefix + "/" + key
 }
+
+func (red *RedisJsonStore) Update( key string, value interface{}  ) (error) {
+  var err error
+
+// metadata,err := lazyquicktime.LoadMovMetadata( fs )
+// if err != nil {
+//   DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("Error parsing Quicktime metadata for %s: %s", key, err.Error() ) )
+// return nil, err
+// }
 
   // PromCacheSize.With( prom.Labels{"store":"quicktime"}).Set( float64(len(red.store)))
 
@@ -36,18 +38,18 @@ return nil, err
   }
   defer red.pool.Put( conn )
 
-  b, err := json.Marshal(metadata)
+  b, err := json.Marshal(value)
 
-  if conn.Cmd("SET", qtPrefix + key, b ).Err != nil {
+  if conn.Cmd("SET", red.makeKey(key), b ).Err != nil {
     DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("Error setting Redis: %s", err.Error() ) )
-    return nil, err
+    return err
   }
 
-  return  metadata, err
+  return  err
 }
 
 
-func (red *RedisQuicktimeStore) Get( key string ) (*lazyquicktime.LazyQuicktime, bool) {
+func (red *RedisJsonStore) Get( key string, value interface{} ) (bool,error) {
 
   PromCacheRequests.With( prom.Labels{"store":"quicktime"}).Inc()
 
@@ -57,29 +59,29 @@ func (red *RedisQuicktimeStore) Get( key string ) (*lazyquicktime.LazyQuicktime,
   }
   defer red.pool.Put( conn )
 
-  resp := conn.Cmd("GET", qtPrefix + key )
+  resp := conn.Cmd("GET", red.makeKey(key) )
   bytes,err := resp.Bytes()
   if err != nil {
     DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("Error querying Redis: %s", err.Error() ) )
     // Differentiate different kinds of errors
-    return nil, false
+    return false, err
   }
 
-fmt.Println( string(bytes) )
+//fmt.Println( string(bytes) )
 
- qt := &lazyquicktime.LazyQuicktime{}
- json.Unmarshal( bytes, qt )
+ json.Unmarshal( bytes, value )
 
- return qt, true
+ return  true, nil
 }
 
-func CreateRedisQuicktimeStore( host string ) (*RedisQuicktimeStore, error) {
-  p, err := pool.New("tcp", "localhost:6379", 10)
+func CreateRedisJSONStore( redisHost, prefix string ) (*RedisJsonStore, error) {
+  p, err := pool.New("tcp", redisHost, 10)
   if err != nil {
-    return &RedisQuicktimeStore{}, err
+    return &RedisJsonStore{}, err
   }
 
-  return &RedisQuicktimeStore{
+  return &RedisJsonStore{
     pool: p,
+    prefix: prefix,
   }, nil
 }

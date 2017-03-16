@@ -17,6 +17,17 @@ import "github.com/amarburg/go-lazyquicktime"
 
 var leadingNumbers,_ = regexp.Compile("^\\d+")
 
+type QTMetadata struct {
+  URL       string
+  NumFrames int
+  Duration  float32
+}
+
+//const qtPrefix = "qt."
+
+var QTMetadataStore JSONStore
+
+
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	//  fmt.Fprintf( w, "Quicktime handler: %s with residual path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
 
@@ -24,10 +35,11 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	uri.Path += node.Path
 
 	// Initialize or update as necessary
-	lqt, ok := DefaultQuicktimeStore.Get(node.trimPath)
+	lqt := &lazyquicktime.LazyQuicktime{}
+	ok,_ := QTMetadataStore.Get(node.trimPath, lqt)
 	if !ok {
 		node.updateMutex.Lock()
-		lqt, ok = DefaultQuicktimeStore.Get(node.trimPath)
+		ok,_ = QTMetadataStore.Get(node.trimPath, lqt )
 		if !ok {
 			fs, err := lazyfs.OpenHttpSource(uri)
 			if err != nil {
@@ -35,9 +47,11 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 				return nil
 			}
 
-			lqt, err = DefaultQuicktimeStore.Update(node.trimPath, fs)
+			lqt,err := lazyquicktime.LoadMovMetadata( fs )
+
+			err = QTMetadataStore.Update(node.trimPath, lqt )
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Something's went boom parsing the quicktime file: %s", err.Error()), 500)
+				http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
 				return nil
 			}
 		}
@@ -47,17 +61,13 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	if len(path) == 0 {
 		// Leaf node
 
-		// Temporary structure for JSON output
-		out := struct {
-			URL       string
-			NumFrames int
-			Duration  float32
-		}{
+		out := QTMetadata{
 			URL:       uri.String(),
 			NumFrames: lqt.NumFrames(),
 			Duration:  lqt.Duration(),
 		}
 
+		// Temporary structure for JSON output
 		b, err := json.MarshalIndent(out, "", "  ")
 		if err != nil {
 			fmt.Fprintln(w, "JSON error:", err)

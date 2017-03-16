@@ -88,17 +88,17 @@ func ConfigureQuicktimeStoreFromViper()  {
 	switch strings.ToLower( viper.GetString("quicktimestore" )) {
 	default:
 		DefaultLogger.Log("msg","Unable to determine type of image store from \"%s\"", viper.GetString("quicktimestore" ) )
-		 DefaultQuicktimeStore = CreateDefaultQuicktimeStore()
+		 QTMetadataStore = CreateMapJSONStore()
 	case "", "none":
 		DefaultLogger.Log("msg","Using default QuicktimeStore." )
-		DefaultQuicktimeStore = CreateDefaultQuicktimeStore()
+		QTMetadataStore = CreateMapJSONStore()
 	case "redis":
 		hostname := viper.GetString("quicktimestore.redishost")
-			redis,err := CreateRedisQuicktimeStore( hostname )
+			redis,err := CreateRedisJSONStore( hostname, "qt" )
 			if err != nil {
 				DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis Quicktime store to host \"%s\"", hostname ) )
 			}
 
-			DefaultQuicktimeStore = redis
+			QTMetadataStore = redis
 	}
 }

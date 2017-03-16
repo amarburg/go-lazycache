@@ -7,8 +7,9 @@ import (
   // "github.com/docker/docker/client"
   testfiles "github.com/amarburg/go-lazyfs-testfiles"
   "github.com/amarburg/go-lazyfs"
+  "github.com/amarburg/go-lazyquicktime"
   "fmt"
-  "reflect"
+  //"reflect"
 )
 
 // func StartRedis() {
@@ -26,30 +27,36 @@ import (
 // }
 
 
-func TestRedisQuicktimeStore( t *testing.T ) {
-  red,err := CreateRedisQuicktimeStore("localhost:6379")
+func TestRedixJsonStore( t *testing.T ) {
+  red,err := CreateRedisJSONStore("localhost:6379", "test")
   if err != nil {
     t.Fatalf("Error creating Redis store: %s", err.Error() )
   }
 
 src,err := lazyfs.OpenLocalFile( testfiles.TestMovPath )
+lqt,err := lazyquicktime.LoadMovMetadata( src )
 
   testKey := testfiles.TestMovPath
-  lqt,err := red.Update( testKey, src )
+
+  err = red.Update( testKey, lqt )
 
   if err != nil {
     t.Errorf("Error reading quicktime: %s", err.Error() )
   }
 
-  bar,has := red.Get( testfiles.TestMovPath )
+  var retrieved lazyquicktime.LazyQuicktime
+  ok, err := red.Get( testfiles.TestMovPath, &retrieved )
 
-  if !has {
+  if err != nil {
+    t.Errorf("Got error when retrieving value: %s", err.Error() )
+  } else if !ok {
     t.Errorf("Should have %s, but doesn't", testKey )
+  }
   //   } else if !reflect.DeepEqual( lqt, bar ) {
   //   t.Errorf("lqt and bar disagree")
-  // }
+  //}
   //
-  // fmt.Println(lqt )
-  //   fmt.Println( bar)
+   fmt.Println(lqt )
+    fmt.Println( retrieved)
 
 }
