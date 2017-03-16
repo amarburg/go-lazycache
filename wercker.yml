@@ -26,6 +26,8 @@ build:
         code: |
           go test -tags integration
 
+    # TODO.  Figure out how to set up a local Redis service and test against that
+
 trigger-build-of-lazycache-app:
   ## Triggers the lazycache-deploy/build pipeline
   steps:
