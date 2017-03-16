@@ -1,3 +1,5 @@
+// +build redis
+
 package lazycache
 
 import (
@@ -26,7 +28,7 @@ import (
 //     }
 // }
 
-func TestRedixJsonStore(t *testing.T) {
+func TestRedisJsonStore(t *testing.T) {
 	red, err := CreateRedisJSONStore("localhost:6379", "test")
 	if err != nil {
 		t.Fatalf("Error creating Redis store: %s", err.Error())
@@ -55,7 +57,7 @@ func TestRedixJsonStore(t *testing.T) {
 	//   t.Errorf("lqt and bar disagree")
 	//}
 	//
-	fmt.Println(lqt)
-	fmt.Println(retrieved)
+	// fmt.Println(lqt)
+	// fmt.Println(retrieved)
 
 }

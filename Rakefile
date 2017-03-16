@@ -13,8 +13,23 @@ task :lint do
   sh "golint ."
 end
 
-task :test => :build do
-    sh *%w( go test -v -tags integration )
+task :test => "test:short"
+
+namespace :test do
+  task :all => ["test:integration","test:redis"]
+
+  task :short => :build do
+      sh *%w( go test -v  )
+  end
+
+  task :integration => :build do
+      sh *%w( go test -v -tags integration )
+  end
+
+  task :redis => :build do
+      sh *%w( go test -v -tags redis  )
+  end
+
 end
 
 
