@@ -15,18 +15,22 @@ import "regexp"
 import "github.com/amarburg/go-lazyfs"
 import "github.com/amarburg/go-lazyquicktime"
 
-var leadingNumbers,_ = regexp.Compile("^\\d+")
+var leadingNumbers, _ = regexp.Compile("^\\d+")
 
 type QTMetadata struct {
-  URL       string
-  NumFrames int
-  Duration  float32
+	URL       string
+	NumFrames int
+	Duration  float32
 }
 
 //const qtPrefix = "qt."
 
 var QTMetadataStore JSONStore
 
+func init() {
+	// Establish a default handler
+	QTMetadataStore = CreateMapJSONStore()
+}
 
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	//  fmt.Fprintf( w, "Quicktime handler: %s with residual path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
@@ -35,27 +39,43 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	uri.Path += node.Path
 
 	// Initialize or update as necessary
-	lqt := &lazyquicktime.LazyQuicktime{}
-	ok,_ := QTMetadataStore.Get(node.trimPath, lqt)
+	var lqt *lazyquicktime.LazyQuicktime
+
+	QTMetadataStore.Lock()
+	ok, _ := QTMetadataStore.Get(node.trimPath, lqt)
 	if !ok {
-		node.updateMutex.Lock()
-		ok,_ = QTMetadataStore.Get(node.trimPath, lqt )
-		if !ok {
-			fs, err := lazyfs.OpenHttpSource(uri)
-			if err != nil {
-				http.Error(w, "Something's went boom opening the HTTP Source!", 500)
-				return nil
-			}
 
-			lqt,err := lazyquicktime.LoadMovMetadata( fs )
-
-			err = QTMetadataStore.Update(node.trimPath, lqt )
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
-				return nil
-			}
+		fs, err := lazyfs.OpenHttpSource(uri)
+		if err != nil {
+			http.Error(w, "Something's went boom opening the HTTP Source!", 500)
+			return nil
 		}
-		node.updateMutex.Unlock()
+
+		DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", uri.String()))
+		newmov, err := lazyquicktime.LoadMovMetadata(fs)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
+			return nil
+		}
+
+		//fmt.Println(lqt)
+
+		err = QTMetadataStore.Update(node.trimPath, *newmov)
+    lqt = newmov
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
+			return nil
+		}
+	} else {
+    DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
+  }
+	QTMetadataStore.Unlock()
+
+	fmt.Println("lqt:", lqt)
+
+	if lqt == nil {
+	  http.Error(w, "Unable to retrieve Quicktime metadata", 500)
+	  return nil
 	}
 
 	if len(path) == 0 {
@@ -96,7 +116,7 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 
 	}
 
-	frameNum, err := strconv.Atoi( leadingNumbers.FindString(path[0]) )
+	frameNum, err := strconv.Atoi(leadingNumbers.FindString(path[0]))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error parsing frame number \"%s\"", path[0]), 500)
 		return
@@ -116,11 +136,11 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 	url, ok := DefaultImageStore.Url(UUID)
 
 	if ok {
-		DefaultLogger.Log("msg", fmt.Sprintf("Image %s exists in the Image store at %s", UUID, url) )
+		DefaultLogger.Log("msg", fmt.Sprintf("Image %s exists in the Image store at %s", UUID, url))
 		// Set Content-Type or response
 		w.Header().Set("Content-Type", "image/png")
 		// w.Header().Set("Location", url)
-		DefaultLogger.Log("msg", fmt.Sprintf("Redirecting to %s", url ))
+		DefaultLogger.Log("msg", fmt.Sprintf("Redirecting to %s", url))
 		http.Redirect(w, req, url, http.StatusTemporaryRedirect)
 
 	} else {

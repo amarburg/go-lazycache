@@ -2,14 +2,13 @@ package lazycache
 
 import (
 	"cloud.google.com/go/storage"
-	"google.golang.org/api/option"
-  "golang.org/x/net/context"
-	"golang.org/x/oauth2/google"
-	"io"
 	"fmt"
 	kitlog "github.com/go-kit/kit/log"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
+	"io"
 )
-
 
 type GoogleImageStore struct {
 	ctx    context.Context
@@ -17,8 +16,8 @@ type GoogleImageStore struct {
 	bucket *storage.BucketHandle
 	//  index  ImageStoreMap
 
-	Stats 		struct{
-		cacheRequests			int
+	Stats struct {
+		cacheRequests int
 		cacheMisses   int
 	}
 }
@@ -32,7 +31,7 @@ func (store *GoogleImageStore) Url(key string) (string, bool) {
 	obj := store.bucket.Object(key)
 	attr, err := obj.Attrs(store.ctx)
 
-store.Stats.cacheRequests++
+	store.Stats.cacheRequests++
 
 	if err != nil {
 		store.Stats.cacheMisses++
@@ -48,18 +47,18 @@ func (store GoogleImageStore) Store(key string, data io.Reader) {
 	w := obj.NewWriter(store.ctx)
 	io.Copy(w, data)
 	if err := w.Close(); err != nil {
-		fmt.Printf("Error storing key %s to bucket: %s\n", key, err.Error() )
+		fmt.Printf("Error storing key %s to bucket: %s\n", key, err.Error())
 	}
 
-	_,err := obj.Update(store.ctx, storage.ObjectAttrsToUpdate{
+	_, err := obj.Update(store.ctx, storage.ObjectAttrsToUpdate{
 		ContentDisposition: "attachment",
-    ACL:   []storage.ACLRule{
-              { storage.AllUsers, storage.RoleReader },
-            },
-	} )
-  if err != nil {
-    fmt.Printf("Error setting attributes on %s: %s\n", key, err.Error() )
-  }
+		ACL: []storage.ACLRule{
+			{storage.AllUsers, storage.RoleReader},
+		},
+	})
+	if err != nil {
+		fmt.Printf("Error setting attributes on %s: %s\n", key, err.Error())
+	}
 }
 
 func (store GoogleImageStore) Retrieve(key string) (io.Reader, error) {
@@ -79,46 +78,46 @@ func (store GoogleImageStore) Retrieve(key string) (io.Reader, error) {
 	// }
 }
 
-func (store GoogleImageStore) Statistics() ( interface {} ) {
-	return struct{
-			Type string
-			CacheRequests			int `json: "cache_requests"`
-			CacheMisses   int `json: "cache_misses"`
-		}{
-			Type: "google_cloud_storage",
-			CacheRequests:  store.Stats.cacheRequests,
-			CacheMisses:  store.Stats.cacheMisses,
-		}
+func (store GoogleImageStore) Statistics() interface{} {
+	return struct {
+		Type          string
+		CacheRequests int `json: "cache_requests"`
+		CacheMisses   int `json: "cache_misses"`
+	}{
+		Type:          "google_cloud_storage",
+		CacheRequests: store.Stats.cacheRequests,
+		CacheMisses:   store.Stats.cacheMisses,
+	}
 }
 
-func CreateGoogleStore( bucket string  ) (*GoogleImageStore){
+func CreateGoogleStore(bucket string) *GoogleImageStore {
 	logger := kitlog.With(DefaultLogger, "module", "GoogleImageStore")
 
-  store := &GoogleImageStore{}
+	store := &GoogleImageStore{}
 
-  fmt.Printf("Creating Google image store in bucket \"%s\"\n", bucket)
+	fmt.Printf("Creating Google image store in bucket \"%s\"\n", bucket)
 
 	var err error
 	store.ctx = context.Background()
 
-	cred,err := google.FindDefaultCredentials( store.ctx, "https://www.googleapis.com/auth/cloud-platform" )
+	cred, err := google.FindDefaultCredentials(store.ctx, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
-		logger.Log("level","info",
-								"tag","auth_error",
-								"msg",fmt.Sprintf("Credential error: %s", err.Error()))
+		logger.Log("level", "info",
+			"tag", "auth_error",
+			"msg", fmt.Sprintf("Credential error: %s", err.Error()))
 
 	}
 	store.client, err = storage.NewClient(store.ctx,
-																				option.WithTokenSource(cred.TokenSource) )
+		option.WithTokenSource(cred.TokenSource))
 	if err != nil {
 		panic(fmt.Sprintf("Error opening storage client: %s", err.Error()))
 	}
 
-	store.bucket = store.client.Bucket( bucket )
+	store.bucket = store.client.Bucket(bucket)
 	// if err := store.bucket.Create(store.ctx, ProjectId, nil); err != nil {
 	//   panic(fmt.Sprintf("Error creating bucket: %s", err.Error()))
 	// }
 
-return store
+	return store
 
 }

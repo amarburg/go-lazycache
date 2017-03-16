@@ -1,19 +1,19 @@
 package lazycache
 
 import (
-	"github.com/spf13/viper"
-	flag "github.com/spf13/pflag"
 	"fmt"
+	flag "github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"strings"
 )
 
 func ViperConfiguration() {
 
 	// Configuration
-	viper.SetDefault("port", 8080 )
-	viper.SetDefault("bind","0.0.0.0")
+	viper.SetDefault("port", 8080)
+	viper.SetDefault("bind", "0.0.0.0")
 	viper.SetDefault("imagestore", "")
-	viper.SetDefault("imagestore.bucket","camhd-image-cache")
+	viper.SetDefault("imagestore.bucket", "camhd-image-cache")
 
 	viper.SetDefault("quicktimestore", "")
 
@@ -21,19 +21,19 @@ func ViperConfiguration() {
 	viper.AddConfigPath("/etc/lazycache")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil  { // Handle errors reading the config file
+	if err != nil {             // Handle errors reading the config file
 		switch err.(type) {
 		case viper.ConfigFileNotFoundError:
 			// ignore
 		default:
-	    panic(fmt.Errorf("Fatal error config file: %s \n", err))
+			panic(fmt.Errorf("Fatal error config file: %s \n", err))
 		}
 	}
 
 	viper.SetEnvPrefix("lazycache")
 	viper.AutomaticEnv()
 	// Convert '.' to '_' in configuration variable names
-	viper.SetEnvKeyReplacer( strings.NewReplacer(".", "_") )
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// var (
 	// 	bindFlag          = flag.String("bind", "0.0.0.0", "Network interface to bind to (defaults to 0.0.0.0)")
@@ -51,8 +51,6 @@ func ViperConfiguration() {
 	flag.String("quicktime-store", "", "Type of quicktime store (none, redis)")
 	flag.String("quicktime-store-redis-host", "localhost:6379", "Host used for redis store")
 
-
-
 	viper.BindPFlag("port", flag.Lookup("port"))
 	viper.BindPFlag("bind", flag.Lookup("bind"))
 	viper.BindPFlag("imagestore", flag.Lookup("image-store"))
@@ -63,42 +61,41 @@ func ViperConfiguration() {
 	viper.BindPFlag("quicktimestore", flag.Lookup("quicktime-store"))
 	viper.BindPFlag("quicktimestore.redishost", flag.Lookup("quicktime-store-redis-host"))
 
-
 	flag.Parse()
 }
 
 func ConfigureImageStoreFromViper() {
-	switch strings.ToLower( viper.GetString("imagestore" )) {
+	switch strings.ToLower(viper.GetString("imagestore")) {
 	default:
-		DefaultLogger.Log("msg","Unable to determine type of image store from \"%s\"", viper.GetString("imagestore" ) )
-		 DefaultImageStore = NullImageStore{}
+		DefaultLogger.Log("msg", "Unable to determine type of image store from \"%s\"", viper.GetString("imagestore"))
+		DefaultImageStore = NullImageStore{}
 	case "", "none":
-		DefaultLogger.Log("msg","No image store configured." )
-		 DefaultImageStore = NullImageStore{}
+		DefaultLogger.Log("msg", "No image store configured.")
+		DefaultImageStore = NullImageStore{}
 	case "local":
-			DefaultImageStore = CreateLocalStore(viper.GetString("imagestore.localRoot"),
-																						viper.GetString("imagestore.bind") )
+		DefaultImageStore = CreateLocalStore(viper.GetString("imagestore.localRoot"),
+			viper.GetString("imagestore.bind"))
 	case "google":
-	   DefaultImageStore = CreateGoogleStore(viper.GetString("imagestore.bucket") )
+		DefaultImageStore = CreateGoogleStore(viper.GetString("imagestore.bucket"))
 	}
 }
 
-func ConfigureQuicktimeStoreFromViper()  {
+func ConfigureQuicktimeStoreFromViper() {
 
-	switch strings.ToLower( viper.GetString("quicktimestore" )) {
+	switch strings.ToLower(viper.GetString("quicktimestore")) {
 	default:
-		DefaultLogger.Log("msg","Unable to determine type of image store from \"%s\"", viper.GetString("quicktimestore" ) )
-		 QTMetadataStore = CreateMapJSONStore()
+		DefaultLogger.Log("msg", "Unable to determine type of image store from \"%s\"", viper.GetString("quicktimestore"))
+		QTMetadataStore = CreateMapJSONStore()
 	case "", "none":
-		DefaultLogger.Log("msg","Using default QuicktimeStore." )
+		DefaultLogger.Log("msg", "Using default QuicktimeStore.")
 		QTMetadataStore = CreateMapJSONStore()
 	case "redis":
 		hostname := viper.GetString("quicktimestore.redishost")
-			redis,err := CreateRedisJSONStore( hostname, "qt" )
-			if err != nil {
-				DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis Quicktime store to host \"%s\"", hostname ) )
-			}
+		redis, err := CreateRedisJSONStore(hostname, "qt")
+		if err != nil {
+			DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis Quicktime store to host \"%s\"", hostname))
+		}
 
-			QTMetadataStore = redis
+		QTMetadataStore = redis
 	}
 }

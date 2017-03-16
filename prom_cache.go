@@ -10,7 +10,7 @@ var (
 			Name: "cache_requests_total",
 			Help: "Number of cache requests.",
 		},
-    []string{"store"},
+		[]string{"store"},
 	)
 
 	PromCacheMisses = prometheus.NewCounterVec(
@@ -18,15 +18,15 @@ var (
 			Name: "cache_misses_total",
 			Help: "Number of cache misses.",
 		},
-    []string{"store"},
+		[]string{"store"},
 	)
 
 	PromCacheSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "cache_size",
 		Help: "Number of elements in cache",
 	},
-  []string{"store"},
-)
+		[]string{"store"},
+	)
 )
 
 func init() {

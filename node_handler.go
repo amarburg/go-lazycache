@@ -4,15 +4,11 @@ import "fmt"
 import "net/http"
 import "strings"
 
-import "sync"
-
 type Node struct {
 	Path, trimPath string
 	Children       map[string]*Node
 	leafFunc       func(*Node, []string, http.ResponseWriter, *http.Request) *Node
 	Fs             *HttpFS
-
-	updateMutex sync.Mutex
 }
 
 type RootNode struct {
@@ -21,18 +17,15 @@ type RootNode struct {
 	nodeMap map[string]*Node
 }
 
-
 var RootMap map[string]*RootNode
 
 func init() {
 	RootMap = make(map[string]*RootNode)
 }
 
-
-
 func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
-	DefaultLogger.Log("msg",fmt.Sprintf("In rootNode::ServeHTTP for %s", root.node.Fs.Uri.String() ) )
+	DefaultLogger.Log("msg", fmt.Sprintf("In rootNode::ServeHTTP for %s", root.node.Fs.Uri.String()))
 	// Sanitive the input URL
 	shortPath := strings.TrimPrefix(req.URL.Path, root.node.trimPath)
 	elements := stripBlankElementsRight(strings.Split(shortPath, "/"))
@@ -113,10 +106,10 @@ func MakeRootNode(Fs *HttpFS, root string) {
 	http.Handle(rootNode.node.trimPath, rootNode)
 	rootNode.node.leafFunc = HandleDirectory
 
-	DefaultLogger.Log("level","debug","msg", fmt.Sprintf("Handling %s", rootNode.node.trimPath ))
+	DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("Adding root node %s", rootNode.node.trimPath))
 
 	RootMap[Fs.Uri.String()] = rootNode
 
-// Assign leafFunc because we know it's a directory
+	// Assign leafFunc because we know it's a directory
 	//rootNode.node.autodetectLeafFunc()
 }

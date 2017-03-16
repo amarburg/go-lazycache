@@ -5,8 +5,6 @@ import "net/url"
 
 import "github.com/amarburg/go-lazyfs-testfiles/http_server"
 
-//import "fmt"
-
 func TestHttpFS(t *testing.T) {
 	srv := lazyfs_testfiles_http_server.HttpServer()
 	defer srv.Stop()
@@ -16,7 +14,6 @@ func TestHttpFS(t *testing.T) {
 	if fs == nil || err != nil {
 		t.Fatal("Couldn't create HttpFS", err.Error())
 	}
-
 }
 
 func TestHttpFSListing(t *testing.T) {
@@ -31,6 +28,7 @@ func TestHttpFSListing(t *testing.T) {
 	testPath := "RS03ASHS/PN03B/06-CAMHDA301/2016/"
 
 	listing, err := fs.ReadHttpDir(testPath)
+
 
 	if err != nil {
 		t.Fatal("Couldn't list directory on OOI Raw Data Server", err.Error())

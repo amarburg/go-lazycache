@@ -5,21 +5,48 @@ import "fmt"
 import "encoding/json"
 import "strings"
 
+type DirListing struct {
+	Path        string
+	Files       []string
+	Directories []string
+}
+
+var DirKeyStore JSONStore
+
+func init() {
+	DirKeyStore = CreateMapJSONStore()
+}
 
 func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	// Initialize or update as necessary
-	if _, ok := DefaultListingStore.Get(node); !ok {
-		node.updateMutex.Lock()
-		if _, ok = DefaultListingStore.Get(node); !ok {
-			if listing, err := node.Fs.ReadHttpDir(node.Path); err == nil {
-				DefaultListingStore.Update(node, listing)
-				node.BootstrapDirectory(listing)
-			}
+	var listing DirListing
+	var err error
+
+fmt.Printf("prelock\n")
+	DirKeyStore.Lock()
+	fmt.Printf("postlock\n")
+	// TODO:  Handler error condition
+	ok, _ := DirKeyStore.Get(node.Path, &listing)
+
+	if !ok {
+		DefaultLogger.Log("msg",fmt.Sprintf("Need to update dir cache for %s", node.Path))
+		listing, err = node.Fs.ReadHttpDir(node.Path)
+		if err == nil {
+			DirKeyStore.Update(node.Path, listing)
+			node.BootstrapDirectory(listing)
+		} else {
+			DefaultLogger.Log(fmt.Sprintf("msg", "Errors querying remote directory: %s", node.Path))
 		}
-		node.updateMutex.Unlock()
+		fmt.Printf("new listing of %s: %v\n", node.Path, listing)
 	}
+
+	DirKeyStore.Unlock()
+	fmt.Printf("unlocked\n")
+
+
+	fmt.Printf("post listing of %s: %v\n", node.Path, listing)
 
 	// If there's residual path, they must be children (not a verb)
 	if len(path) > 0 {
@@ -38,29 +65,24 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		// TODO: Should really dump cached values, not reread from the source
 		//listing, err := node.Fs.ReadHttpDir(node.Path)
 
-		if listing, ok := DefaultListingStore.Get(node); ok {
+		// Doesn't update ... yet
+		// Need to be able to unregister from ServeMux, among other things
+		// if len(listing.Directories) + len(listing.Files) != len(node.Children) {
+		//   // Updated
+		//   fmt.Printf("Updating directory for %s\n", node.Path )
+		//   BootstrapDirectory( node, listing )
+		// }
 
-			// Doesn't update ... yet
-			// Need to be able to unregister from ServeMux, among other things
-			// if len(listing.Directories) + len(listing.Files) != len(node.Children) {
-			//   // Updated
-			//   fmt.Printf("Updating directory for %s\n", node.Path )
-			//   BootstrapDirectory( node, listing )
-			// }
+		// TODO.  Reformat the output for JSON
+		// Technically, I should generate this based on internal structure, not listing
 
-			// TODO.  Reformat the output for JSON
-			// Technically, I should generate this based on internal structure, not listing
-
-			b, err := json.MarshalIndent(listing, "", "  ")
-			if err != nil {
-				DefaultLogger.Log( "level", "error", "msg", fmt.Sprintf( "JSON error:", err) )
-			}
-
-			w.Write(b)
-
-		} else {
-			http.Error(w, fmt.Sprintf("Error while retrieving from : %s", node.trimPath), 500)
+		b, err := json.MarshalIndent(listing, "", "  ")
+		if err != nil {
+			DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("JSON error:", err))
 		}
+
+		w.Write(b)
+
 	}
 
 	return nil

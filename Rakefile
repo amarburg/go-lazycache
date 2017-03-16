@@ -5,12 +5,16 @@ task :build do
   sh *%w( go build )
 end
 
+task :gofmt do
+  sh "gofmt -s -w ."
+end
+
 task :lint do
-  sh *%w( golint . )
+  sh "golint ."
 end
 
 task :test => :build do
-    sh *%w( go test -tags integration )
+    sh *%w( go test -v -tags integration )
 end
 
 
