@@ -72,10 +72,8 @@ func (red *RedisJsonStore) Get(key string, value interface{}) (bool, error) {
 	if err != nil {
 		DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("Error querying Redis: %s", err.Error()))
 		// Differentiate different kinds of errors
-		return false, err
+		return false, nil
 	}
-
-	//fmt.Println( string(bytes) )
 
 	json.Unmarshal(bytes, value)
 

@@ -35,8 +35,8 @@ func TestRandomWalk(t *testing.T) {
 
 	settings := stress.NewSettings()
 
-	settings.SetCount(1)
-	settings.SetParallelism(1)
+	settings.SetCount(100)
+	settings.SetParallelism(5)
 	err := stress.RandomWalk(*settings, "http://127.0.0.1:5000/v1/org/oceanobservatories/rawdata/files/")
 
 	if err != nil {

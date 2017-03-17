@@ -29,7 +29,6 @@ func TestHttpFSListing(t *testing.T) {
 
 	listing, err := fs.ReadHttpDir(testPath)
 
-
 	if err != nil {
 		t.Fatal("Couldn't list directory on OOI Raw Data Server", err.Error())
 	}

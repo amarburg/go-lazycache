@@ -13,7 +13,7 @@ func TestHammerServer(t *testing.T) {
 	defer server.Stop()
 	AddMirror(OOIRawDataRootURL)
 
-	HammerServer(1)
+	HammerServer(3)
 }
 
 func HammerServer(count int) {

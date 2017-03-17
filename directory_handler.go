@@ -21,18 +21,16 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	// Initialize or update as necessary
-	var listing DirListing
-	var err error
-
-fmt.Printf("prelock\n")
 	DirKeyStore.Lock()
-	fmt.Printf("postlock\n")
+	fmt.Println(DirKeyStore)
+
 	// TODO:  Handler error condition
-	ok, _ := DirKeyStore.Get(node.Path, &listing)
+	listing := &DirListing{}
+	ok, _ := DirKeyStore.Get(node.Path, listing)
 
 	if !ok {
-		DefaultLogger.Log("msg",fmt.Sprintf("Need to update dir cache for %s", node.Path))
-		listing, err = node.Fs.ReadHttpDir(node.Path)
+		DefaultLogger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
+		listing, err := node.Fs.ReadHttpDir(node.Path)
 		if err == nil {
 			DirKeyStore.Update(node.Path, listing)
 			node.BootstrapDirectory(listing)
@@ -41,10 +39,7 @@ fmt.Printf("prelock\n")
 		}
 		fmt.Printf("new listing of %s: %v\n", node.Path, listing)
 	}
-
 	DirKeyStore.Unlock()
-	fmt.Printf("unlocked\n")
-
 
 	fmt.Printf("post listing of %s: %v\n", node.Path, listing)
 

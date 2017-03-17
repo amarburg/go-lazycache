@@ -1,6 +1,7 @@
 package lazycache
 
 import (
+	"reflect"
 	"sync"
 )
 
@@ -12,7 +13,7 @@ import (
 import prom "github.com/prometheus/client_golang/prometheus"
 
 type JSONStore interface {
-	Get(key string, value interface{}) (bool, error)
+	Get(key string, ptr interface{}) (bool, error)
 	Update(key string, value interface{}) error
 	Lock()
 	Unlock()
@@ -35,7 +36,6 @@ func (store *MapJSONStore) Unlock() {
 func (store *MapJSONStore) Update(key string, value interface{}) error {
 
 	store.store[key] = value
-
 	PromCacheSize.With(prom.Labels{"store": "quicktime"}).Set(float64(len(store.store)))
 
 	//quicktime.DumpTree( DefaultQuicktimeStore.store[ key ].Tree )
@@ -43,14 +43,24 @@ func (store *MapJSONStore) Update(key string, value interface{}) error {
 	return nil
 }
 
-func (store *MapJSONStore) Get(key string, value interface{}) (bool, error) {
-	PromCacheRequests.With(prom.Labels{"store": "quicktime"}).Inc()
-	retrieved, has := store.store[key]
-  value = &retrieved
+func (store *MapJSONStore) Get(key string, v interface{}) (bool, error) {
 
-	if !has {
-		PromCacheMisses.With(prom.Labels{"store": "quicktime"}).Inc()
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return false, nil
 	}
+
+	PromCacheRequests.With(prom.Labels{"store": "quicktime"}).Inc()
+
+	rx, has := store.store[key]
+
+	if has {
+		reflect.Indirect(reflect.ValueOf(v)).Set(reflect.ValueOf(rx))
+	} else {
+		PromCacheMisses.With(prom.Labels{"store": "quicktime"}).Inc()
+
+	}
+
 	return has, nil
 }
 
