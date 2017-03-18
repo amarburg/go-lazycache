@@ -8,15 +8,21 @@ func IndexHandler(w http.ResponseWriter, req *http.Request) {
 
 	// Map RootMap to a different structure
 
+	type APIPathOut struct {
+		V1 string
+	}
+
 	type RootMapOut struct {
-		APIPathV1 string
+		APIPath APIPathOut
 	}
 
 	jsonRootMap := make(map[string]RootMapOut)
 
 	for key, root := range RootMap {
 		jsonRootMap[key] = RootMapOut{
-			APIPathV1: root.node.trimPath,
+			APIPath: APIPathOut{
+				V1: root.node.trimPath,
+			},
 		}
 	}
 

@@ -18,7 +18,7 @@ func init() {
 }
 
 func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
-	fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
+	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	// Initialize or update as necessary
 	DirKeyStore.Lock()
@@ -42,14 +42,15 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		}
 		//fmt.Printf("new listing of %s: %v\n", node.Path, listing)
 	}
-	DirKeyStore.Unlock()
-
-	DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
 
 	// How else can I tell if the node tree needs to be updated?
 	if len(node.Children) != len(listing.Directories)+len(listing.Files) {
 		node.BootstrapDirectory(*listing)
 	}
+
+	DirKeyStore.Unlock()
+
+	DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
 
 	// If there's residual path, they must be children (not a verb)
 	if len(path) > 0 {
@@ -92,7 +93,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 }
 
 func (node *Node) BootstrapDirectory(listing DirListing) {
-	fmt.Printf("Bootstrapping directory %s\n", node.Path)
+	//fmt.Printf("Bootstrapping directory %s\n", node.Path)
 
 	// Clear any existing children
 	node.Children = make(map[string]*Node)
