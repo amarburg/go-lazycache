@@ -4,7 +4,7 @@ import "fmt"
 import "net/http"
 import "encoding/json"
 
-func IndexHandler(w http.ResponseWriter, req *http.Request) {
+func RootHandler(w http.ResponseWriter, req *http.Request) {
 
 	// Map RootMap to a different structure
 

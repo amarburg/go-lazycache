@@ -12,7 +12,7 @@ import (
 const ApiVersion = "v1"
 
 func RegisterDefaultHandlers() {
-	http.HandleFunc("/", IndexHandler)
+	http.HandleFunc("/", RootHandler)
 	http.Handle("/metrics/", promhttp.Handler())
 }
 

@@ -15,7 +15,7 @@ var OOIRawDataRootURL = "https://rawdata.oceanobservatories.org/files/"
 
 func StartLazycacheServer(bind string, port int) *stoppable_http_server.SLServer {
 	http.DefaultServeMux = http.NewServeMux()
-	http.HandleFunc("/", IndexHandler)
+	http.HandleFunc("/", RootHandler)
 
 	server := stoppable_http_server.StartServer(func(config *stoppable_http_server.HttpConfig) {
 		config.Host = bind
