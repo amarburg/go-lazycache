@@ -2,7 +2,7 @@
 task :default => :test
 
 task :build do
-  sh *%w( go build )
+  sh( *%w( go build ))
 end
 
 task :gofmt do
@@ -19,15 +19,15 @@ namespace :test do
   task :all => ["test:integration","test:redis"]
 
   task :short => :build do
-      sh *%w( go test -v  )
+      sh(*%w( go test -v  ))
   end
 
   task :integration => :build do
-      sh *%w( go test -v -tags integration )
+      sh(*%w( go test -v -tags integration ))
   end
 
   task :redis => :build do
-      sh *%w( go test -v -tags redis  )
+      sh (*%w( go test -v -tags redis  ))
   end
 
 end
