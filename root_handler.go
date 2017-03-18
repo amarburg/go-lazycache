@@ -4,6 +4,19 @@ import "fmt"
 import "net/http"
 import "encoding/json"
 
+// RootHandler is the default HTTP handler, registered at "/"
+// It returns a JSON structure giving the relative path to
+// each of the registered mirrors.
+//
+// e.g.
+//
+//   {
+//     "https://rawdata.oceanobservatories.org/files/": {
+//       "APIPath": {
+//         "V1": "/v1/org/oceanobservatories/rawdata/files/"
+//       }
+//     }
+//   }
 func RootHandler(w http.ResponseWriter, req *http.Request) {
 
 	// Map RootMap to a different structure
