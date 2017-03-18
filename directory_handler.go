@@ -43,6 +43,8 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		//fmt.Printf("new listing of %s: %v\n", node.Path, listing)
 	}
 
+	// This needs to be within a lock because node.Children is updated...
+	// TODO, give it its own mutex
 	// How else can I tell if the node tree needs to be updated?
 	if len(node.Children) != len(listing.Directories)+len(listing.Files) {
 		node.BootstrapDirectory(*listing)
@@ -50,7 +52,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 
 	DirKeyStore.Unlock()
 
-	DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
+	//DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
 
 	// If there's residual path, they must be children (not a verb)
 	if len(path) > 0 {
