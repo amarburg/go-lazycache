@@ -53,7 +53,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		}
 
 		DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", uri.String()))
-		lqt, err := lazyquicktime.LoadMovMetadata(fs)
+		lqt, err = lazyquicktime.LoadMovMetadata(fs)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
 			return nil
@@ -71,7 +71,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	}
 	QTMetadataStore.Unlock()
 
-	fmt.Println("lqt:", lqt)
+	//fmt.Println("lqt:", lqt)
 
 	// if lqt == nil {
 	//   http.Error(w, "Unable to retrieve Quicktime metadata", 500)

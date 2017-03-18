@@ -6,6 +6,7 @@ import "net/url"
 import "errors"
 import "golang.org/x/net/html"
 import "regexp"
+import "path"
 
 //====
 
@@ -44,17 +45,17 @@ func (fs *HttpFS) PathType(path string) int {
 //   return src,err
 // }
 
-func (fs *HttpFS) ReadHttpDir(path string) (DirListing, error) {
+func (fs *HttpFS) ReadHttpDir(p string) (DirListing, error) {
 	client := http.Client{}
 
 	pathUri := fs.Uri
-	pathUri.Path += path
+	pathUri.Path += p
 
 	fmt.Printf("Querying directory: %s\n", pathUri.String())
 
 	response, err := client.Get(pathUri.String())
 
-	listing := DirListing{Path: path,
+	listing := DirListing{Path: p,
 		Files:       make([]string, 0),
 		Directories: make([]string, 0),
 	}
@@ -100,7 +101,7 @@ func (fs *HttpFS) ReadHttpDir(path string) (DirListing, error) {
 						if val == text {
 
 							if trailingSlash.MatchString(text) {
-								listing.Directories = append(listing.Directories, text)
+								listing.Directories = append(listing.Directories, path.Clean(text))
 							} else {
 								listing.Files = append(listing.Files, text)
 							}

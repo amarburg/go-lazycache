@@ -5,6 +5,7 @@ package lazycache
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sync"
 )
 
@@ -19,7 +20,7 @@ type RedisJsonStore struct {
 }
 
 func (red *RedisJsonStore) makeKey(key string) string {
-	return red.prefix + "/" + key
+	return red.prefix + ":" + key
 }
 
 func (red *RedisJsonStore) Lock() {
@@ -49,7 +50,7 @@ func (red *RedisJsonStore) Update(key string, value interface{}) error {
 
 	b, err := json.Marshal(value)
 
-	if conn.Cmd("SET", red.makeKey(key), b).Err != nil {
+	if err := conn.Cmd("SET", red.makeKey(key), b).Err; err != nil {
 		DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("Error setting Redis: %s", err.Error()))
 		return err
 	}
@@ -58,6 +59,10 @@ func (red *RedisJsonStore) Update(key string, value interface{}) error {
 }
 
 func (red *RedisJsonStore) Get(key string, value interface{}) (bool, error) {
+
+	if reflect.TypeOf(value).Kind() != reflect.Ptr {
+		return false, fmt.Errorf("RedisJsonStore: Get(non-pointer " + reflect.TypeOf(value).String() + ")")
+	}
 
 	PromCacheRequests.With(prom.Labels{"store": "quicktime"}).Inc()
 
@@ -70,9 +75,9 @@ func (red *RedisJsonStore) Get(key string, value interface{}) (bool, error) {
 	resp := conn.Cmd("GET", red.makeKey(key))
 	bytes, err := resp.Bytes()
 	if err != nil {
-		DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("Error querying Redis: %s", err.Error()))
+		DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("Error querying Redis (%T): %s", err, err.Error()))
 		// Differentiate different kinds of errors
-		return false, nil
+		return false, err
 	}
 
 	json.Unmarshal(bytes, value)
