@@ -32,15 +32,19 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 
 	if !ok {
 		DefaultLogger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
-		listing, err := node.Fs.ReadHttpDir(node.Path)
+		listing, err = node.Fs.ReadHttpDir(node.Path)
+		fmt.Printf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories))
+
 		if err == nil {
-			DirKeyStore.Update(node.Path, listing)
+			DirKeyStore.Update(node.Path, *listing)
 		} else {
-			DefaultLogger.Log(fmt.Sprintf("msg", "Errors querying remote directory: %s", node.Path))
+			DefaultLogger.Log("msg", fmt.Sprintf("Errors querying remote directory: %s", node.Path))
 		}
 		//fmt.Printf("new listing of %s: %v\n", node.Path, listing)
 	}
 	DirKeyStore.Unlock()
+
+	DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
 
 	// How else can I tell if the node tree needs to be updated?
 	if len(node.Children) != len(listing.Directories)+len(listing.Files) {

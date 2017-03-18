@@ -34,6 +34,10 @@ func (red *RedisJsonStore) Unlock() {
 func (red *RedisJsonStore) Update(key string, value interface{}) error {
 	var err error
 
+	if reflect.TypeOf(value).Kind() == reflect.Ptr {
+		return fmt.Errorf("RedisJsonStore: Update(Pointer " + reflect.TypeOf(value).String() + ")")
+	}
+
 	// metadata,err := lazyquicktime.LoadMovMetadata( fs )
 	// if err != nil {
 	//   DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("Error parsing Quicktime metadata for %s: %s", key, err.Error() ) )

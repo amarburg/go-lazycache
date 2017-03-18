@@ -45,7 +45,7 @@ func (fs *HttpFS) PathType(path string) int {
 //   return src,err
 // }
 
-func (fs *HttpFS) ReadHttpDir(p string) (DirListing, error) {
+func (fs *HttpFS) ReadHttpDir(p string) (*DirListing, error) {
 	client := http.Client{}
 
 	pathUri := fs.Uri
@@ -55,7 +55,7 @@ func (fs *HttpFS) ReadHttpDir(p string) (DirListing, error) {
 
 	response, err := client.Get(pathUri.String())
 
-	listing := DirListing{Path: p,
+	listing := &DirListing{Path: p,
 		Files:       make([]string, 0),
 		Directories: make([]string, 0),
 	}

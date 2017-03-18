@@ -1,6 +1,7 @@
 package lazycache
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 )
@@ -35,6 +36,10 @@ func (store *MapJSONStore) Unlock() {
 
 func (store *MapJSONStore) Update(key string, value interface{}) error {
 
+	if reflect.TypeOf(value).Kind() == reflect.Ptr {
+		return fmt.Errorf("MapJSONStore: Update(Pointer " + reflect.TypeOf(value).String() + ")")
+	}
+
 	store.store[key] = value
 	PromCacheSize.With(prom.Labels{"store": "quicktime"}).Set(float64(len(store.store)))
 
@@ -43,11 +48,11 @@ func (store *MapJSONStore) Update(key string, value interface{}) error {
 	return nil
 }
 
-func (store *MapJSONStore) Get(key string, v interface{}) (bool, error) {
+func (store *MapJSONStore) Get(key string, value interface{}) (bool, error) {
 
-	rv := reflect.ValueOf(v)
+	rv := reflect.ValueOf(value)
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
-		return false, nil
+		return false, fmt.Errorf("MapJSONStore: Get(Pointer " + rv.String() + ")")
 	}
 
 	PromCacheRequests.With(prom.Labels{"store": "quicktime"}).Inc()
@@ -55,7 +60,7 @@ func (store *MapJSONStore) Get(key string, v interface{}) (bool, error) {
 	rx, has := store.store[key]
 
 	if has {
-		reflect.Indirect(reflect.ValueOf(v)).Set(reflect.ValueOf(rx))
+		reflect.Indirect(reflect.ValueOf(value)).Set(reflect.ValueOf(rx))
 	} else {
 		PromCacheMisses.With(prom.Labels{"store": "quicktime"}).Inc()
 
