@@ -19,15 +19,15 @@ namespace :test do
   task :all => ["test:integration","test:redis"]
 
   task :short => :build do
-      sh(*%w( go test -v  ))
+      sh "go test -v"
   end
 
   task :integration => :build do
-      sh(*%w( go test -v -tags integration ))
+      sh "go test -v -tags integration"
   end
 
   task :redis => :build do
-      sh (*%w( go test -v -tags redis  ))
+      sh "go test -v -tags redis"
   end
 
 end
@@ -35,7 +35,8 @@ end
 
 namespace :wercker do
 
+  desc "Build Wecker locally using wercker CLI"
   task :build do
-    sh *%w( wercker --verbose build --git-domain github.com --git-owner=amarburg --git-repository=go-lazycache )
+    sh "wercker --verbose build --git-domain github.com --git-owner=amarburg --git-repository=go-lazycache"
   end
 end
