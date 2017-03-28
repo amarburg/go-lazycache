@@ -68,9 +68,11 @@ func ViperConfiguration() {
 }
 
 func ConfigureImageStoreFromViper() {
-	switch strings.ToLower(viper.GetString("imagestore")) {
+	storeKey := viper.GetString("imagestore")
+	DefaultLogger.Log("msg", fmt.Sprintf("Configuring image store with type \"%s\"", storeKey))
+	switch strings.ToLower(storeKey) {
 	default:
-		DefaultLogger.Log("msg", "Unable to determine type of image store from \"%s\"", viper.GetString("imagestore"))
+		DefaultLogger.Log("msg", fmt.Sprintf("Unable to determine type of image store from \"%s\"", storeKey))
 		DefaultImageStore = NullImageStore{}
 	case "", "none":
 		DefaultLogger.Log("msg", "No image store configured.")
@@ -84,16 +86,19 @@ func ConfigureImageStoreFromViper() {
 }
 
 func ConfigureQuicktimeStoreFromViper() {
+	storeKey := viper.GetString("quicktimestore")
+	DefaultLogger.Log("msg", fmt.Sprintf("Configuring quicktime store with type \"%s\"", storeKey))
 
-	switch strings.ToLower(viper.GetString("quicktimestore")) {
+	switch strings.ToLower(storeKey) {
 	default:
-		DefaultLogger.Log("msg", "Unable to determine type of image store from \"%s\"", viper.GetString("quicktimestore"))
+		DefaultLogger.Log("msg", fmt.Sprintf("Unable to determine type of image store from \"%s\"", storeKey))
 		QTMetadataStore = CreateMapJSONStore()
 	case "", "none":
 		DefaultLogger.Log("msg", "Using default QuicktimeStore.")
 		QTMetadataStore = CreateMapJSONStore()
 	case "redis":
 		hostname := viper.GetString("redishost")
+		DefaultLogger.Log("msg", fmt.Sprintf("Connecting to redis host \"%s\"", hostname))
 		redis, err := CreateRedisJSONStore(hostname, "qt")
 		if err != nil {
 			DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis Quicktime store to host \"%s\"", hostname))
@@ -105,16 +110,19 @@ func ConfigureQuicktimeStoreFromViper() {
 }
 
 func ConfigureDirectoryStoreFromViper() {
+	storeKey := viper.GetString("directorystore")
+	DefaultLogger.Log("msg", fmt.Sprintf("Configuring directory store with type \"%s\"", storeKey))
 
-	switch strings.ToLower(viper.GetString("directorystore")) {
+	switch strings.ToLower(storeKey) {
 	default:
-		DefaultLogger.Log("msg", "Unable to determine type of directory store from \"%s\"", viper.GetString("directorystore"))
+		DefaultLogger.Log("msg", fmt.Sprintf("Unable to determine type of directory store from \"%s\"", storeKey))
 		DirKeyStore = CreateMapJSONStore()
 	case "", "none":
 		DefaultLogger.Log("msg", "Using default directory store.")
 		DirKeyStore = CreateMapJSONStore()
 	case "redis":
 		hostname := viper.GetString("redishost")
+		DefaultLogger.Log("msg", fmt.Sprintf("Connecting to redis host \"%s\"", hostname))
 		redis, err := CreateRedisJSONStore(hostname, "dir")
 		if err != nil {
 			DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis directory store to host \"%s\"", hostname))
