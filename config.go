@@ -135,6 +135,8 @@ func ConfigureDirectoryStoreFromViper() {
 }
 
 func ConfigureFromViper() {
+	ViperConfiguration()
+
 	DefaultLogger.Log("msg", "In ConfigureFromViper")
 	ConfigureImageStoreFromViper()
 	ConfigureDirectoryStoreFromViper()
