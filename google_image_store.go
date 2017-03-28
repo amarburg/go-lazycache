@@ -114,10 +114,10 @@ func CreateGoogleStore(bucket string) *GoogleImageStore {
 	}
 
 	store.bucket = store.client.Bucket(bucket)
-	attrs := &storage.BucketAttrs{ StorageClass: "REGIONAL", Location: "us-central1" }
+	attrs := &storage.BucketAttrs{StorageClass: "REGIONAL", Location: "us-central1"}
 	if err := store.bucket.Create(store.ctx, "camhd-app-dev", attrs); err != nil {
-		logger.Log("msg",fmt.Sprintf("Error during bucket creation: %s", err.Error() ) )
-	  //panic(fmt.Sprintf("Error creating bucket: %s", err.Error()))
+		logger.Log("msg", fmt.Sprintf("Error during bucket creation: %s", err.Error()))
+		//panic(fmt.Sprintf("Error creating bucket: %s", err.Error()))
 	}
 
 	return store
