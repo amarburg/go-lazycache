@@ -17,6 +17,7 @@ func ViperConfiguration() {
 
 	viper.SetDefault("quicktimestore", "")
 	viper.SetDefault("directorystore", "")
+	viper.SetDefault("redishost", "localhost:6379")
 
 	viper.SetConfigName("lazycache")
 	viper.AddConfigPath("/etc/lazycache")
@@ -55,8 +56,8 @@ func ViperConfiguration() {
 
 	viper.BindPFlag("port", flag.Lookup("port"))
 	viper.BindPFlag("bind", flag.Lookup("bind"))
-	viper.BindPFlag("imagestore", flag.Lookup("image-store"))
 
+	viper.BindPFlag("imagestore", flag.Lookup("image-store"))
 	viper.BindPFlag("imagestore.bucket", flag.Lookup("image-store-bucket"))
 	viper.BindPFlag("imagestore.localroot", flag.Lookup("image-local-root"))
 
