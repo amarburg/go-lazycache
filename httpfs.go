@@ -1,14 +1,24 @@
 package lazycache
 
-import "fmt"
-import "net/http"
-import "net/url"
-import "errors"
-import "golang.org/x/net/html"
-import "regexp"
-import "path"
+import (
+	"errors"
+	"fmt"
+	"github.com/amarburg/go-lazyfs"
+	"golang.org/x/net/html"
+	"net/http"
+	"net/url"
+	"path"
+	"regexp"
+)
 
 //====
+
+type FileSystem interface {
+	PathType(path string) int
+	ReadDir(p string) (*DirListing, error)
+	OriginalPath(p string) string
+	LazyFile(p string) (lazyfs.FileSource, error)
+}
 
 type HttpFS struct {
 	Uri url.URL
@@ -38,6 +48,22 @@ func (fs *HttpFS) PathType(path string) int {
 	return File
 }
 
+func (fs *HttpFS) OriginalUri(p string) url.URL {
+	uri := fs.Uri
+	uri.Path += p
+	return uri
+}
+
+func (fs *HttpFS) OriginalPath(p string) string {
+	url := fs.OriginalUri(p)
+	return url.String()
+}
+
+func (fs *HttpFS) LazyFile(p string) (lazyfs.FileSource, error) {
+	lazy, err := lazyfs.OpenHttpSource(fs.OriginalUri(p))
+	return lazy, err
+}
+
 // func (fs *HttpFS ) Open( path string ) (*HttpSource, error) {
 //   url,_ := url.Parse(fs.url_root + path)
 //   src,err := OpenHttpSource( *url )
@@ -45,7 +71,7 @@ func (fs *HttpFS) PathType(path string) int {
 //   return src,err
 // }
 
-func (fs *HttpFS) ReadHttpDir(p string) (*DirListing, error) {
+func (fs *HttpFS) ReadDir(p string) (*DirListing, error) {
 	client := http.Client{}
 
 	pathUri := fs.Uri

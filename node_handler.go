@@ -8,7 +8,7 @@ type Node struct {
 	Path, trimPath string
 	Children       map[string]*Node
 	leafFunc       func(*Node, []string, http.ResponseWriter, *http.Request) *Node
-	Fs             *HttpFS
+	Fs             FileSystem
 }
 
 type RootNode struct {
@@ -25,7 +25,7 @@ func init() {
 
 func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
-	DefaultLogger.Log("msg", fmt.Sprintf("In rootNode::ServeHTTP for %s", root.node.Fs.Uri.String()))
+	//DefaultLogger.Log("msg", fmt.Sprintf("In rootNode::ServeHTTP for %s", root.node.Fs.Uri.String()))
 	// Sanitive the input URL
 	shortPath := strings.TrimPrefix(req.URL.Path, root.node.trimPath)
 	elements := stripBlankElementsRight(strings.Split(shortPath, "/"))
@@ -93,22 +93,23 @@ func (parent *Node) MakeNode(path string) *Node {
 	return node
 }
 
-func MakeRootNode(Fs *HttpFS, root string) {
+func MakeRootNode(fs FileSystem, root string) {
 	rootNode := &RootNode{
 		node: &Node{
 			Path:     "/",
 			trimPath: root,
 			Children: make(map[string]*Node),
-			Fs:       Fs,
+			Fs:       fs,
 		},
 	}
 
+	DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("Adding HTTP handler for %s", rootNode.node.trimPath))
 	http.Handle(rootNode.node.trimPath, rootNode)
 	rootNode.node.leafFunc = HandleDirectory
 
 	DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("Adding root node %s", rootNode.node.trimPath))
 
-	RootMap[Fs.Uri.String()] = rootNode
+	RootMap[fs.OriginalPath("")] = rootNode
 
 	// Assign leafFunc because we know it's a directory
 	//rootNode.node.autodetectLeafFunc()

@@ -12,7 +12,6 @@ import "image/png"
 import "bytes"
 import "regexp"
 
-import "github.com/amarburg/go-lazyfs"
 import "github.com/amarburg/go-lazyquicktime"
 
 var leadingNumbers, _ = regexp.Compile("^\\d+")
@@ -35,8 +34,9 @@ func init() {
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	//  fmt.Fprintf( w, "Quicktime handler: %s with residual path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
 
-	uri := node.Fs.Uri
-	uri.Path += node.Path
+	// uri := node.Fs.Uri
+	// uri.Path += node.Path
+	//
 
 	// Initialize or update as necessary
 	lqt := &lazyquicktime.LazyQuicktime{}
@@ -45,14 +45,15 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	has, _ := QTMetadataStore.Get(node.trimPath, lqt)
 
 	if !has {
+		fs, err := node.Fs.LazyFile(node.Path)
 
-		fs, err := lazyfs.OpenHttpSource(uri)
+		//fs, err := lazyfs.OpenHttpSource(uri)
 		if err != nil {
 			http.Error(w, "Something's went boom opening the HTTP Source!", 500)
 			return nil
 		}
 
-		DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", uri.String()))
+		DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
 		lqt, err = lazyquicktime.LoadMovMetadata(fs)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
@@ -82,7 +83,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		// Leaf node
 
 		out := QTMetadata{
-			URL:       uri.String(),
+			URL:       node.Path,
 			NumFrames: lqt.NumFrames(),
 			Duration:  lqt.Duration(),
 		}
