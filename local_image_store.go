@@ -89,14 +89,14 @@ func (store LocalImageStore) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func CreateLocalStore(localRoot string, host string) *LocalImageStore {
+func CreateLocalStore(localRoot string, addr string) *LocalImageStore {
 
-	port := 7080
-	addr := fmt.Sprintf("%s:%d", host, port)
+	// port := 7080
+	// addr := fmt.Sprintf("%s:%d", host, port)
 
 	store := &LocalImageStore{
 		LocalRoot: localRoot,
-		UrlRoot:   "http://" + addr + "/",
+		UrlRoot:   addr,
 		logger:    kitlog.With(DefaultLogger, "module", "LocalImageStore"),
 	}
 
