@@ -37,18 +37,13 @@ func ViperConfiguration() {
 	// Convert '.' to '_' in configuration variable names
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	// var (
-	// 	bindFlag          = flag.String("bind", "0.0.0.0", "Network interface to bind to (defaults to 0.0.0.0)")
-	// 	ImageStoreFlag   = flag.String("image-store", "", "Type of image store (none, google)")
-	// 	ImageBucketFlag = flag.String("image-store-bucket", "", "Bucket used for Google image store")
-	// )
 	flag.Int("port", 80, "Network port to listen on (default: 8080)")
 	flag.String("bind", "0.0.0.0", "Network interface to bind to (defaults to 0.0.0.0)")
 
 	flag.String("image-store", "", "Type of image store (none, local, google)")
 	flag.String("image-store-bucket", "camhd-image-cache", "Bucket used for Google image store")
-	flag.String("image-local-root", "", "Bucket used for Google image store")
-	flag.String("image-url-root", "", "Bucket used for Google image store")
+	flag.String("image-store-root", "", "Path to local image store directory (must be writable)")
+	flag.String("image-store-url", "", "Root URL for webserver which serves image store directory")
 
 	flag.String("quicktime-store", "", "Type of quicktime store (none, redis)")
 	flag.String("directory-store", "", "Type of directory store (none, redis)")
@@ -59,7 +54,8 @@ func ViperConfiguration() {
 
 	viper.BindPFlag("imagestore", flag.Lookup("image-store"))
 	viper.BindPFlag("imagestore.bucket", flag.Lookup("image-store-bucket"))
-	viper.BindPFlag("imagestore.localroot", flag.Lookup("image-local-root"))
+	viper.BindPFlag("imagestore.root", flag.Lookup("image-store-root"))
+	viper.BindPFlag("imagestore.url", flag.Lookup("image-store-url"))
 
 	viper.BindPFlag("directorystore", flag.Lookup("directory-store"))
 	viper.BindPFlag("quicktimestore", flag.Lookup("quicktime-store"))
@@ -79,8 +75,7 @@ func ConfigureImageStoreFromViper() {
 		DefaultLogger.Log("msg", "No image store configured.")
 		DefaultImageStore = NullImageStore{}
 	case "local":
-		DefaultImageStore = CreateLocalStore(viper.GetString("imagestore.localRoot"),
-			viper.GetString("imagestore.bind"))
+		DefaultImageStore = CreateLocalStore(viper.GetString("imagestore.root"), viper.GetString("imagestore.url"))
 	case "google":
 		DefaultImageStore = CreateGoogleStore(viper.GetString("imagestore.bucket"))
 	}
