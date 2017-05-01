@@ -18,14 +18,17 @@ func init() {
 }
 
 func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
-	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
+	fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	// Initialize or update as necessary
 	DirKeyStore.Lock()
 
 	// TODO:  Handler error condition
 	listing := &DirListing{}
-	ok, err := DirKeyStore.Get(node.Path, listing)
+	cacheKey := node.Fs.OriginalPath(node.Path)
+	//DefaultLogger.Log("msg", fmt.Sprintf("Checking cache key: %s", cacheKey))
+
+	ok, err := DirKeyStore.Get(cacheKey, listing)
 	if err != nil {
 		DefaultLogger.Log("msg", fmt.Sprintf("Error checking the keystore: %s", err.Error()))
 	}
@@ -33,10 +36,10 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 	if !ok {
 		DefaultLogger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
 		listing, err = node.Fs.ReadDir(node.Path)
-		fmt.Printf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories))
+		DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\n", len(listing.Files), len(listing.Directories)))
 
 		if err == nil {
-			DirKeyStore.Update(node.Path, *listing)
+			DirKeyStore.Update(cacheKey, *listing)
 		} else {
 			DefaultLogger.Log("msg", fmt.Sprintf("Errors querying remote directory: %s", node.Path))
 		}
@@ -72,21 +75,12 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		// TODO: Should really dump cached values, not reread from the source
 		//listing, err := node.Fs.ReadHttpDir(node.Path)
 
-		// Doesn't update ... yet
-		// Need to be able to unregister from ServeMux, among other things
-		// if len(listing.Directories) + len(listing.Files) != len(node.Children) {
-		//   // Updated
-		//   fmt.Printf("Updating directory for %s\n", node.Path )
-		//   BootstrapDirectory( node, listing )
-		// }
-
-		// TODO.  Reformat the output for JSON
-		// Technically, I should generate this based on internal structure, not listing
-
 		b, err := json.MarshalIndent(listing, "", "  ")
 		if err != nil {
 			DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("JSON error:", err))
 		}
+
+		addCacheDefeatHeaders(w)
 
 		w.Write(b)
 
