@@ -32,7 +32,7 @@ func init() {
 }
 
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
-	//  fmt.Fprintf( w, "Quicktime handler: %s with residual path (%d): (%s)\n", node.Path, len(path), strings.Join(path,":") )
+	DefaultLogger.Log("msg", fmt.Sprintf("Quicktime handler: %s with residual path (%d): (%s)", node.Path, len(path), strings.Join(path, ":")))
 
 	// uri := node.Fs.Uri
 	// uri.Path += node.Path
@@ -71,13 +71,6 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
 	}
 	QTMetadataStore.Unlock()
-
-	//fmt.Println("lqt:", lqt)
-
-	// if lqt == nil {
-	//   http.Error(w, "Unable to retrieve Quicktime metadata", 500)
-	//   return nil
-	// }
 
 	if len(path) == 0 {
 		// Leaf node
@@ -124,7 +117,7 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 	}
 
 	if frameNum > lqt.NumFrames() {
-		http.Error(w, fmt.Sprintf("Requested frame %d in movie with %d frames", frameNum, lqt.NumFrames()), 400)
+		http.Error(w, fmt.Sprintf("Requested frame %d in movie of length %d frames", frameNum, lqt.NumFrames()), 400)
 		return
 	}
 	if frameNum < 1 {
@@ -153,19 +146,21 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 		}
 
 		buffer := new(bytes.Buffer)
-		err = png.Encode(buffer, img)
+
+		encoder := png.Encoder{
+			CompressionLevel: png.NoCompression,
+		}
+		err = encoder.Encode(buffer, img)
 
 		imgReader := bytes.NewReader(buffer.Bytes())
 
 		// write image to Image store
 		DefaultImageStore.Store(UUID, imgReader)
 
-		//fmt.Println(buffer)
+		//Rewind the io, and write to the HTTP channel
 		imgReader.Seek(0, io.SeekStart)
-
-		// Write image to HTTP request
-		n, err := imgReader.WriteTo(w)
-		fmt.Printf("Wrote %d bytes to http buffer\n", n)
+		_, err = imgReader.WriteTo(w)
+		//fmt.Printf("Wrote %d bytes to http buffer\n", n)
 		if err != nil {
 			fmt.Printf("Error writing to HTTP buffer: %s\n", err.Error())
 		}

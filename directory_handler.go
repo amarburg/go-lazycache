@@ -18,7 +18,7 @@ func init() {
 }
 
 func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
-	fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
+	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
 	// Initialize or update as necessary
 	DirKeyStore.Lock()
@@ -36,7 +36,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 	if !ok {
 		DefaultLogger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
 		listing, err = node.Fs.ReadDir(node.Path)
-		DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\n", len(listing.Files), len(listing.Directories)))
+		//DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories)))
 
 		if err == nil {
 			DirKeyStore.Update(cacheKey, *listing)
@@ -50,7 +50,8 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 	// TODO, give it its own mutex
 	// How else can I tell if the node tree needs to be updated?
 	if len(node.Children) != len(listing.Directories)+len(listing.Files) {
-		DefaultLogger.Log("msg", "Bootstrapping directory")
+		DefaultLogger.Log("msg", fmt.Sprintf("Bootstrapping directory %s (%d != %d+%d)", node.Path,
+			len(node.Children), len(listing.Directories), len(listing.Files)))
 		node.BootstrapDirectory(*listing)
 	}
 
