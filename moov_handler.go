@@ -150,7 +150,6 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 		encoder := png.Encoder{
 			CompressionLevel: png.NoCompression,
 		}
-		DefaultLogger.Log("msg", fmt.Sprintf("PNG Compression %d", encoder.CompressionLevel))
 		err = encoder.Encode(buffer, img)
 
 		imgReader := bytes.NewReader(buffer.Bytes())
