@@ -13,13 +13,12 @@ type LocalImageStore struct {
 	LocalRoot string
 	UrlRoot   string
 	logger    kitlog.Logger
+	cache     map[string]int
 
 	Stats struct {
 		cacheRequests int
 		cacheMisses   int
 	}
-
-	cache map[string]int
 }
 
 func (store *LocalImageStore) Has(key string) bool {
@@ -27,12 +26,12 @@ func (store *LocalImageStore) Has(key string) bool {
 
 	_, has := store.cache[filename]
 	if has {
-		DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("\"%s\" exists in cache", filename))
+		store.logger.Log("level", "debug", "msg", fmt.Sprintf("\"%s\" exists in image store cache", filename))
 		store.cache[filename]++
 		return true
 	}
 
-	DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("Checking for \"%s\"", filename))
+	store.logger.Log("level", "debug", "msg", fmt.Sprintf("Checking local image store for \"%s\"", filename))
 	_, err := os.Stat(filename)
 	if err != nil {
 		store.cache[filename] = 1
@@ -63,15 +62,16 @@ func RecursiveMkdir(dir string) {
 	}
 }
 
-func (store LocalImageStore) Store(key string, data io.Reader) {
+func (store *LocalImageStore) Store(key string, data io.Reader) {
 	filename := store.LocalRoot + key
 	RecursiveMkdir(path.Dir(filename))
 
 	f, err := os.Create(filename)
 	if err != nil {
-		DefaultLogger.Log("msg", err.Error(), "type", "error")
+		store.logger.Log("msg", err.Error(), "type", "error")
 	}
 
+	store.cache[filename] = 1
 	io.Copy(f, data)
 }
 
@@ -113,6 +113,7 @@ func CreateLocalStore(localRoot string, addr string) *LocalImageStore {
 		LocalRoot: localRoot,
 		UrlRoot:   addr,
 		logger:    kitlog.With(DefaultLogger, "module", "LocalImageStore"),
+		cache:     make(map[string]int),
 	}
 
 	DefaultLogger.Log("msg",
