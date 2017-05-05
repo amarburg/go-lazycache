@@ -27,6 +27,7 @@ func (store *LocalImageStore) Has(key string) bool {
 
 	_, has := store.cache[filename]
 	if has {
+		DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("\"%s\" exists in cache", filename))
 		store.cache[filename]++
 		return true
 	}
