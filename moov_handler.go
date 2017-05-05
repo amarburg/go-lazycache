@@ -126,7 +126,6 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 	}
 
 	UUID := req.URL.Path + ".png"
-
 	url, ok := DefaultImageStore.Url(UUID)
 
 	if ok {

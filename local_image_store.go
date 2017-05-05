@@ -18,13 +18,27 @@ type LocalImageStore struct {
 		cacheRequests int
 		cacheMisses   int
 	}
+
+	cache map[string]int
 }
 
-func (store LocalImageStore) Has(key string) bool {
+func (store *LocalImageStore) Has(key string) bool {
 	filename := store.LocalRoot + key
+
+	_, has := store.cache[filename]
+	if has {
+		store.cache[filename]++
+		return true
+	}
+
 	DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("Checking for \"%s\"", filename))
 	_, err := os.Stat(filename)
-	return err == nil
+	if err != nil {
+		store.cache[filename] = 1
+		return true
+	}
+
+	return false
 }
 
 func (store *LocalImageStore) Url(key string) (string, bool) {
