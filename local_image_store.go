@@ -26,14 +26,14 @@ func (store *LocalImageStore) Has(key string) bool {
 
 	_, has := store.cache[filename]
 	if has {
-		store.logger.Log("level", "debug", "msg", fmt.Sprintf("\"%s\" exists in image store cache", filename))
+		store.logger.Log("level", "debug", "msg", fmt.Sprintf("Image exists in cache: %s", filename))
 		store.cache[filename]++
 		return true
 	}
 
 	store.logger.Log("level", "debug", "msg", fmt.Sprintf("Checking local image store for \"%s\"", filename))
 	_, err := os.Stat(filename)
-	if err != nil {
+	if err == nil {
 		store.cache[filename] = 1
 		return true
 	}
