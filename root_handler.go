@@ -19,8 +19,7 @@ import "encoding/json"
 //   }
 func RootHandler(w http.ResponseWriter, req *http.Request) {
 
-	// Map RootMap to a different structure
-
+	// Temporary structures which define the output JSON structure
 	type APIPathOut struct {
 		V1 string
 	}

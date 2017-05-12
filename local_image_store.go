@@ -13,6 +13,7 @@ type LocalImageStore struct {
 	LocalRoot string
 	UrlRoot   string
 	logger    kitlog.Logger
+	cache     map[string]int
 
 	Stats struct {
 		cacheRequests int
@@ -20,11 +21,24 @@ type LocalImageStore struct {
 	}
 }
 
-func (store LocalImageStore) Has(key string) bool {
+func (store *LocalImageStore) Has(key string) bool {
 	filename := store.LocalRoot + key
-	DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("Checking for \"%s\"", filename))
+
+	_, has := store.cache[filename]
+	if has {
+		store.logger.Log("level", "debug", "msg", fmt.Sprintf("Image exists in cache: %s", filename))
+		store.cache[filename]++
+		return true
+	}
+
+	store.logger.Log("level", "debug", "msg", fmt.Sprintf("Checking local image store for \"%s\"", filename))
 	_, err := os.Stat(filename)
-	return err == nil
+	if err == nil {
+		store.cache[filename] = 1
+		return true
+	}
+
+	return false
 }
 
 func (store *LocalImageStore) Url(key string) (string, bool) {
@@ -48,15 +62,16 @@ func RecursiveMkdir(dir string) {
 	}
 }
 
-func (store LocalImageStore) Store(key string, data io.Reader) {
+func (store *LocalImageStore) Store(key string, data io.Reader) {
 	filename := store.LocalRoot + key
 	RecursiveMkdir(path.Dir(filename))
 
 	f, err := os.Create(filename)
 	if err != nil {
-		DefaultLogger.Log("msg", err.Error(), "type", "error")
+		store.logger.Log("msg", err.Error(), "type", "error")
 	}
 
+	store.cache[filename] = 1
 	io.Copy(f, data)
 }
 
@@ -89,15 +104,16 @@ func (store LocalImageStore) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func CreateLocalStore(localRoot string, host string) *LocalImageStore {
+func CreateLocalStore(localRoot string, addr string) *LocalImageStore {
 
-	port := 7080
-	addr := fmt.Sprintf("%s:%d", host, port)
+	// port := 7080
+	// addr := fmt.Sprintf("%s:%d", host, port)
 
 	store := &LocalImageStore{
 		LocalRoot: localRoot,
-		UrlRoot:   "http://" + addr + "/",
+		UrlRoot:   addr,
 		logger:    kitlog.With(DefaultLogger, "module", "LocalImageStore"),
+		cache:     make(map[string]int),
 	}
 
 	DefaultLogger.Log("msg",

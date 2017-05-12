@@ -25,7 +25,8 @@ func init() {
 
 func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
-	//DefaultLogger.Log("msg", fmt.Sprintf("In rootNode::ServeHTTP for %s", root.node.Fs.Uri.String()))
+	//DefaultLogger.Log("msg", fmt.Sprintf("In rootNode::ServeHTTP for %#v", root))
+
 	// Sanitive the input URL
 	shortPath := strings.TrimPrefix(req.URL.Path, root.node.trimPath)
 	elements := stripBlankElementsRight(strings.Split(shortPath, "/"))
@@ -44,24 +45,6 @@ func (root *RootNode) Handle(node *Node, path []string, w http.ResponseWriter, r
 	} else {
 		http.Error(w, fmt.Sprintf("Don't know what to do with path %s", node.Path), 400)
 	}
-
-	// else if len(path) > 0 {
-	// 	// Still no assignment?  If there are paths left, assume it's a directory and recurse
-	//
-	// 	fmt.Printf("Don't know what to do with %s but there are paths left, assume it's a directory and move on...\n", path[0])
-	//
-	// 	if _, ok := node.Children[path[0]]; ok == false {
-	// 		newNode := node.MakeNode(path[0] + "/")
-	// 		node.Children[path[0]] = newNode
-	// 		//fmt.Printf("Registering %s\n", newNode.trimPath)
-	// 		//http.Handle(newNode.trimPath, newNode)
-	// 	}
-	//
-	// 	//newNode.leafFunc = HandleDirectory
-	// 	//newNode.autodetectLeafFunc()
-	// 	root.Handle(node.Children[path[0]], path[1:], w, req)
-	//
-	// } else {
 
 }
 
@@ -103,7 +86,8 @@ func MakeRootNode(fs FileSystem, root string) {
 		},
 	}
 
-	DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("Adding HTTP handler for %s", rootNode.node.trimPath))
+	//DefaultLogger.Log("level", "debug",
+	//								  "msg", fmt.Sprintf("Adding HTTP %#v handler for %s", rootNode, rootNode.node.trimPath))
 	http.Handle(rootNode.node.trimPath, rootNode)
 	rootNode.node.leafFunc = HandleDirectory
 
