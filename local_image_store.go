@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"sync"
 )
 
 type LocalImageStore struct {
@@ -14,6 +15,8 @@ type LocalImageStore struct {
 	UrlRoot   string
 	logger    kitlog.Logger
 	cache     map[string]int
+
+	mutex 		sync.Mutex
 
 	Stats struct {
 		cacheRequests int
@@ -23,6 +26,9 @@ type LocalImageStore struct {
 
 func (store *LocalImageStore) Has(key string) bool {
 	filename := store.LocalRoot + key
+
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
 
 	_, has := store.cache[filename]
 	if has {
@@ -70,6 +76,9 @@ func (store *LocalImageStore) Store(key string, data io.Reader) {
 	if err != nil {
 		store.logger.Log("msg", err.Error(), "type", "error")
 	}
+	
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
 
 	store.cache[filename] = 1
 	io.Copy(f, data)
