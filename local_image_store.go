@@ -16,7 +16,7 @@ type LocalImageStore struct {
 	logger    kitlog.Logger
 	cache     map[string]int
 
-	mutex 		sync.Mutex
+	mutex sync.Mutex
 
 	Stats struct {
 		cacheRequests int
@@ -76,7 +76,7 @@ func (store *LocalImageStore) Store(key string, data io.Reader) {
 	if err != nil {
 		store.logger.Log("msg", err.Error(), "type", "error")
 	}
-	
+
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
