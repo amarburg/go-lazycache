@@ -1,8 +1,11 @@
 package lazycache
 
-import "fmt"
-import "net/http"
-import "strings"
+import (
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+)
 
 type Node struct {
 	Path, trimPath string
@@ -25,6 +28,8 @@ func init() {
 
 func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
+	reqStart := time.Now()
+
 	//DefaultLogger.Log("msg", fmt.Sprintf("In rootNode::ServeHTTP for %#v", root))
 
 	// Sanitive the input URL
@@ -33,6 +38,8 @@ func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// Launch into the tree
 	root.Handle(root.node, elements, w, req)
+
+	timeTrack(reqStart, "Full HTTP request")
 }
 
 func (root *RootNode) Handle(node *Node, path []string, w http.ResponseWriter, req *http.Request) {

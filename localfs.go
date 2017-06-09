@@ -63,7 +63,7 @@ func (fs *LocalFS) ReadDir(p string) (*DirListing, error) {
 	for _, f := range files {
 		if f.IsDir() {
 			listing.Directories = append(listing.Directories, f.Name())
-		} else if f.Mode()&(os.ModeDir | os.ModeNamedPipe | os.ModeSocket | os.ModeDevice) == 0 {
+		} else if f.Mode()&(os.ModeDir|os.ModeNamedPipe|os.ModeSocket|os.ModeDevice) == 0 {
 			// os.ModeType includes all of the "special types" e.g. pipes, directories, etc., but we allow symlinks...
 			listing.Files = append(listing.Files, f.Name())
 		}

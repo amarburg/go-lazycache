@@ -8,9 +8,10 @@ import "strconv"
 //import "strings"
 import "io"
 import "encoding/json"
-import "image/png"
+import "github.com/amarburg/go-fast-png"
 import "bytes"
 import "regexp"
+import "time"
 
 import "github.com/amarburg/go-lazyquicktime"
 
@@ -33,6 +34,8 @@ func init() {
 
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	DefaultLogger.Log("msg", fmt.Sprintf("Quicktime handler: %s with residual path (%d): (%s)", node.Path, len(path), strings.Join(path, ":")))
+
+	movStart := time.Now()
 
 	// uri := node.Fs.Uri
 	// uri.Path += node.Path
@@ -99,6 +102,8 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		}
 	}
 
+	timeTrack(movStart, "Moov handler")
+
 	return nil
 }
 
@@ -138,18 +143,25 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 
 	} else {
 
+		startExt := time.Now()
 		img, err := lqt.ExtractFrame(frameNum)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error generating image for frame %d: %s", frameNum, err.Error()), 500)
 			return
 		}
+		timeTrack(startExt, "Frame extraction")
 
 		buffer := new(bytes.Buffer)
 
-		encoder := png.Encoder{
-			CompressionLevel: png.NoCompression,
+		encoder := fastpng.Encoder{
+			CompressionLevel: fastpng.DefaultCompression,
 		}
+
+		startEncode := time.Now()
 		err = encoder.Encode(buffer, img)
+		timeTrack(startEncode, "Png encode")
+
+		fmt.Println("PNG size", buffer.Len()/(1024*1024), "MB")
 
 		imgReader := bytes.NewReader(buffer.Bytes())
 
@@ -164,5 +176,8 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 			fmt.Printf("Error writing to HTTP buffer: %s\n", err.Error())
 		}
 
+		timeTrack(startExt, "Full extract and write")
+
 	}
+
 }

@@ -1,7 +1,11 @@
 package lazycache
 
-import "strings"
-import "sort"
+import (
+	"log"
+	"sort"
+	"strings"
+	"time"
+)
 
 func MungeHostname(hostname string) []string {
 	splitHN := strings.Split(hostname, ".")
@@ -18,4 +22,9 @@ func stripBlankElementsRight(slice []string) []string {
 		return stripBlankElementsRight(slice[:len(slice)-1])
 	}
 	return slice
+}
+
+func timeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	log.Printf("%s took %s", name, elapsed)
 }
