@@ -69,6 +69,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 
 		//fmt.Println(lqt)
 
+		DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
 		err = QTMetadataStore.Update(node.trimPath, *lqt)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
