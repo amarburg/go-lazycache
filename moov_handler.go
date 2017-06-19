@@ -45,15 +45,15 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	lqt := &lazyquicktime.LazyQuicktime{}
 
 	{
-		DefaultLogger.Log("debug", "Locking metdatadata store")
+		DefaultLogger.Log("debug", fmt.Sprintf("Locking metdatadata store for %s", node.Path))
 		QTMetadataStore.Lock()
 		defer QTMetadataStore.Unlock()
 
-		DefaultLogger.Log("debug", "Querying metdatadata store")
+		DefaultLogger.Log("debug", fmt.Sprintf("Querying metdatadata store for %s", node.Path))
 		has, _ := QTMetadataStore.Get(node.trimPath, lqt)
 
 		if !has {
-			DefaultLogger.Log("debug", "Not in metdatadata store, querying CI")
+			DefaultLogger.Log("debug", fmt.Sprintf("%s: Not in metdatadata store, querying CI", node.Path))
 			fs, err := node.Fs.LazyFile(node.Path)
 
 			//fs, err := lazyfs.OpenHttpSource(uri)
