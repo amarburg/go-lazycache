@@ -44,46 +44,52 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	// Initialize or update as necessary
 	lqt := &lazyquicktime.LazyQuicktime{}
 
-	DefaultLogger.Log("debug", "Locking metdatadata store")
-	QTMetadataStore.Lock()
+	{
+		DefaultLogger.Log("debug", "Locking metdatadata store")
+		QTMetadataStore.Lock()
+		defer QTMetadataStore.Unlock()
 
-	DefaultLogger.Log("debug", "Querying metdatadata store")
-	has, _ := QTMetadataStore.Get(node.trimPath, lqt)
+		DefaultLogger.Log("debug", "Querying metdatadata store")
+		has, _ := QTMetadataStore.Get(node.trimPath, lqt)
 
-	if !has {
-		DefaultLogger.Log("debug", "Not in metdatadata store, querying CI")
-		fs, err := node.Fs.LazyFile(node.Path)
+		if !has {
+			DefaultLogger.Log("debug", "Not in metdatadata store, querying CI")
+			fs, err := node.Fs.LazyFile(node.Path)
 
-		//fs, err := lazyfs.OpenHttpSource(uri)
-		if err != nil {
-			http.Error(w, "Something's went boom opening the HTTP Source!", 500)
-			return nil
+			//fs, err := lazyfs.OpenHttpSource(uri)
+			if err != nil {
+				DefaultLogger.Log("err", "Something's went boom opening the HTTP Source!")
+				http.Error(w, "Something's went boom opening the HTTP Source!", 500)
+				return nil
+			}
+
+			DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
+			lqt, err = lazyquicktime.LoadMovMetadata(fs)
+			if err != nil {
+				DefaultLogger.Log("err", fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()))
+				http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
+				return nil
+			}
+
+			//fmt.Println(lqt)
+
+			DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
+			err = QTMetadataStore.Update(node.trimPath, *lqt)
+			if err != nil {
+				DefaultLogger.Log("err", fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()))
+				http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
+				return nil
+			}
+		} else {
+			DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
 		}
 
-		DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
-		lqt, err = lazyquicktime.LoadMovMetadata(fs)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
-			return nil
-		}
-
-		//fmt.Println(lqt)
-
-		DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
-		err = QTMetadataStore.Update(node.trimPath, *lqt)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
-			return nil
-		}
-	} else {
-		DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
 	}
-	QTMetadataStore.Unlock()
 
 	if len(path) == 0 {
 		// Leaf node
 
-		DefaultLogger.Log("msg", fmt.Sprintf("Returning movie information for %s", node.Path ))
+		DefaultLogger.Log("msg", fmt.Sprintf("Returning movie information for %s", node.Path))
 
 		out := QTMetadata{
 			URL:       node.Path,
@@ -97,7 +103,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 			fmt.Fprintln(w, "JSON error:", err)
 		}
 
-		DefaultLogger.Log("msg", fmt.Sprintf("..... done" ))
+		DefaultLogger.Log("msg", fmt.Sprintf("..... done"))
 
 		w.Write(b)
 	} else {
