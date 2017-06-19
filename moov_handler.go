@@ -44,10 +44,14 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	// Initialize or update as necessary
 	lqt := &lazyquicktime.LazyQuicktime{}
 
+	DefaultLogger.Log("debug", "Locking metdatadata store")
 	QTMetadataStore.Lock()
+
+	DefaultLogger.Log("debug", "Querying metdatadata store")
 	has, _ := QTMetadataStore.Get(node.trimPath, lqt)
 
 	if !has {
+		DefaultLogger.Log("debug", "Not in metdatadata store, querying CI")
 		fs, err := node.Fs.LazyFile(node.Path)
 
 		//fs, err := lazyfs.OpenHttpSource(uri)
@@ -78,6 +82,8 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	if len(path) == 0 {
 		// Leaf node
 
+		DefaultLogger.Log("msg", fmt.Sprintf("Returning movie information for %s", node.Path ))
+
 		out := QTMetadata{
 			URL:       node.Path,
 			NumFrames: lqt.NumFrames(),
@@ -90,7 +96,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 			fmt.Fprintln(w, "JSON error:", err)
 		}
 
-		DefaultLogger.Log("msg", fmt.Sprintf("Returning movie information for %s", node.Path ))
+		DefaultLogger.Log("msg", fmt.Sprintf("..... done" ))
 
 		w.Write(b)
 	} else {
