@@ -90,6 +90,8 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 			fmt.Fprintln(w, "JSON error:", err)
 		}
 
+		DefaultLogger.Log("msg", fmt.Sprintf("Returning movie information for %s", node.Path ))
+
 		w.Write(b)
 	} else {
 
