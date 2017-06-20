@@ -43,16 +43,16 @@ func init() {
 
 func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 
-	DefaultLogger.Log("debug", fmt.Sprintf("Locking metadata store for %s", node.Path))
+	//DefaultLogger.Log("debug", fmt.Sprintf("Locking metadata store for %s", node.Path))
 	QTMetadataStore.Mutex.Lock()
 	defer QTMetadataStore.Mutex.Unlock()
 
 	// Initialize or update as necessary
-	DefaultLogger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
+	//DefaultLogger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
 	lqt, has := QTMetadataStore.Cache[node.trimPath]
 
 	if !has {
-		DefaultLogger.Log("debug", fmt.Sprintf("%s: Not in metdatadata store, querying CI", node.Path))
+		//DefaultLogger.Log("debug", fmt.Sprintf("%s: Not in metdatadata store, querying CI", node.Path))
 		fs, err := node.Fs.LazyFile(node.Path)
 
 		//fs, err := lazyfs.OpenHttpSource(uri)
@@ -60,7 +60,7 @@ func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 			return nil, fmt.Errorf("Something's went boom opening the HTTP Source!")
 		}
 
-		DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
+		//DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
 		lqt, err = lazyquicktime.LoadMovMetadata(fs)
 		if err != nil {
 			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
@@ -68,15 +68,15 @@ func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 
 		//fmt.Println(lqt)
 
-		DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
+		//DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
 		QTMetadataStore.Cache[node.trimPath] = lqt
 		if err != nil {
 			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
 		}
 
-	} else {
-		DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
-	}
+	} //else {
+	//DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
+	//}
 
 	return lqt, nil
 }
