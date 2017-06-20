@@ -81,29 +81,29 @@ func ConfigureImageStoreFromViper() {
 	}
 }
 
-func ConfigureQuicktimeStoreFromViper() {
-	storeKey := viper.GetString("quicktimestore")
-	DefaultLogger.Log("msg", fmt.Sprintf("Configuring quicktime store with type \"%s\"", storeKey))
-
-	switch strings.ToLower(storeKey) {
-	default:
-		DefaultLogger.Log("msg", fmt.Sprintf("Unable to determine type of image store from \"%s\"", storeKey))
-		QTMetadataStore = CreateMapJSONStore()
-	case "", "none":
-		DefaultLogger.Log("msg", "Using default QuicktimeStore.")
-		QTMetadataStore = CreateMapJSONStore()
-	case "redis":
-		hostname := viper.GetString("redishost")
-		DefaultLogger.Log("msg", fmt.Sprintf("Connecting to redis host \"%s\"", hostname))
-		redis, err := CreateRedisJSONStore(hostname, "qt")
-		if err != nil {
-			DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis Quicktime store to host \"%s\"", hostname))
-		}
-
-		DefaultLogger.Log("msg", fmt.Sprintf("Logging movie metadata to Redis at %s", hostname))
-		QTMetadataStore = redis
-	}
-}
+// func ConfigureQuicktimeStoreFromViper() {
+// 	storeKey := viper.GetString("quicktimestore")
+// 	DefaultLogger.Log("msg", fmt.Sprintf("Configuring quicktime store with type \"%s\"", storeKey))
+//
+// 	switch strings.ToLower(storeKey) {
+// 	default:
+// 		DefaultLogger.Log("msg", fmt.Sprintf("Unable to determine type of image store from \"%s\"", storeKey))
+// 		QTMetadataStore = CreateMapJSONStore()
+// 	case "", "none":
+// 		DefaultLogger.Log("msg", "Using default QuicktimeStore.")
+// 		QTMetadataStore = CreateMapJSONStore()
+// 	case "redis":
+// 		hostname := viper.GetString("redishost")
+// 		DefaultLogger.Log("msg", fmt.Sprintf("Connecting to redis host \"%s\"", hostname))
+// 		redis, err := CreateRedisJSONStore(hostname, "qt")
+// 		if err != nil {
+// 			DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis Quicktime store to host \"%s\"", hostname))
+// 		}
+//
+// 		DefaultLogger.Log("msg", fmt.Sprintf("Logging movie metadata to Redis at %s", hostname))
+// 		QTMetadataStore = redis
+// 	}
+// }
 
 func ConfigureDirectoryStoreFromViper() {
 	storeKey := viper.GetString("directorystore")
@@ -135,5 +135,5 @@ func ConfigureFromViper() {
 	DefaultLogger.Log("msg", "In ConfigureFromViper")
 	ConfigureImageStoreFromViper()
 	ConfigureDirectoryStoreFromViper()
-	ConfigureQuicktimeStoreFromViper()
+	//ConfigureQuicktimeStoreFromViper()
 }

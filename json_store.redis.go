@@ -31,7 +31,6 @@ func (red *RedisJsonStore) Unlock() {
 	red.mutex.Unlock()
 }
 
-
 func (red *RedisJsonStore) Update(key string, value interface{}) error {
 	var err error
 

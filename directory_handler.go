@@ -56,7 +56,6 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		node.BootstrapDirectory(*listing)
 	}
 
-
 	//DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
 
 	// If there's residual path, they must be children (not a verb)

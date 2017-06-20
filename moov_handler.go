@@ -13,6 +13,8 @@ import "bytes"
 import "regexp"
 import "time"
 
+import "sync"
+
 import "github.com/amarburg/go-lazyquicktime"
 
 var leadingNumbers, _ = regexp.Compile("^\\d+")
@@ -25,11 +27,58 @@ type QTMetadata struct {
 
 //const qtPrefix = "qt."
 
-var QTMetadataStore JSONStore
+type LQTStore struct {
+	Cache map[string](*lazyquicktime.LazyQuicktime)
+
+	Mutex sync.Mutex
+}
+
+var QTMetadataStore LQTStore
 
 func init() {
-	// Establish a default handler
-	QTMetadataStore = CreateMapJSONStore()
+	QTMetadataStore = LQTStore{
+		Cache: make(map[string](*lazyquicktime.LazyQuicktime)),
+	}
+}
+
+func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
+
+	DefaultLogger.Log("debug", fmt.Sprintf("Locking metadata store for %s", node.Path))
+	QTMetadataStore.Mutex.Lock()
+	defer QTMetadataStore.Mutex.Unlock()
+
+	// Initialize or update as necessary
+	DefaultLogger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
+	lqt, has := QTMetadataStore.Cache[node.trimPath]
+
+	if !has {
+		DefaultLogger.Log("debug", fmt.Sprintf("%s: Not in metdatadata store, querying CI", node.Path))
+		fs, err := node.Fs.LazyFile(node.Path)
+
+		//fs, err := lazyfs.OpenHttpSource(uri)
+		if err != nil {
+			return nil, fmt.Errorf("Something's went boom opening the HTTP Source!")
+		}
+
+		DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
+		lqt, err = lazyquicktime.LoadMovMetadata(fs)
+		if err != nil {
+			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
+		}
+
+		//fmt.Println(lqt)
+
+		DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
+		QTMetadataStore.Cache[node.trimPath] = lqt
+		if err != nil {
+			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
+		}
+
+	} else {
+		DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
+	}
+
+	return lqt, nil
 }
 
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
@@ -40,51 +89,11 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	// uri := node.Fs.Uri
 	// uri.Path += node.Path
 	//
+	lqt, err := retrieveLazyQuicktime(node)
 
-	// Initialize or update as necessary
-	lqt := &lazyquicktime.LazyQuicktime{}
-
-	{
-		DefaultLogger.Log("debug", fmt.Sprintf("Locking metadata store for %s", node.Path))
-		QTMetadataStore.Lock()
-		defer QTMetadataStore.Unlock()
-
-		DefaultLogger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
-		has, _ := QTMetadataStore.Get(node.trimPath, lqt)
-
-		if !has {
-			DefaultLogger.Log("debug", fmt.Sprintf("%s: Not in metdatadata store, querying CI", node.Path))
-			fs, err := node.Fs.LazyFile(node.Path)
-
-			//fs, err := lazyfs.OpenHttpSource(uri)
-			if err != nil {
-				DefaultLogger.Log("err", "Something's went boom opening the HTTP Source!")
-				http.Error(w, "Something's went boom opening the HTTP Source!", 500)
-				return nil
-			}
-
-			DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
-			lqt, err = lazyquicktime.LoadMovMetadata(fs)
-			if err != nil {
-				DefaultLogger.Log("err", fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()))
-				http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
-				return nil
-			}
-
-			//fmt.Println(lqt)
-
-			DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
-			err = QTMetadataStore.Update(node.trimPath, *lqt)
-			if err != nil {
-				DefaultLogger.Log("err", fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()))
-				http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
-				return nil
-			}
-
-		} else {
-			DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
-		}
-
+	if err != nil {
+		DefaultLogger.Log("msg", err.Error())
+		http.Error(w, err.Error(), 500)
 	}
 
 	if len(path) == 0 {
