@@ -1,0 +1,21 @@
+
+
+task :default => :build
+
+task :build do
+  sh "docker build --tag lazycache:latest ."
+end
+
+namespace :run do
+  task :local do
+
+  end
+
+  task :iamge_store do
+    ## TBD.
+    # ENV LAZYCACHE_PORT=8080 \
+    # LAZYCACHE_IMAGESTORE=local  \
+    # LAZYCACHE_IMAGESTORE_ROOT=/srv/image_store \
+    # LAZYCACHE_IMAGESTORE_URL="http://localhost:9082/"
+  end
+end
