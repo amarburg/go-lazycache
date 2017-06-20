@@ -13,28 +13,53 @@ class GCloudConfig
   end
 end
 
-config = GCloudConfig.new( 'camhd-app-dev' )
 
+namespace :cache do
 
-namespace :gcloud do
+  config = GCloudConfig.new( 'camhd-app-dev' )
 
   # task :activate do
   #   sh *%W( gcloud config configurations activate #{camhd_app_dev.config} )
   # end
 
-  task :create do
-    sh *%W( gcloud --app "#{config.name}" app create --region=#{config.region})
+  task :create  do
+    sh "gcloud --project=#{config.name} app create --region=#{config.region}"
   end
 
   task :deploy  do
-    sh *%w( gcloud --app "#{config.name}" app deploy --stop-previous-version app.yaml )
+    sh "gcloud --project=#{config.name} app deploy --stop-previous-version cache/app.yaml"
   end
 
   task :open do
-    sh *%w( open #{camhd_app_dev.url()} )
+    sh "open #{camhd_app_dev.url()}"
   end
 
 end
+
+
+namespace :nocache do
+
+  config = GCloudConfig.new( 'camhd-app-dev-nocache' )
+
+  # task :activate do
+  #   sh *%W( gcloud config configurations activate #{camhd_app_dev.config} )
+  # end
+
+  task :create  do
+    sh "gcloud --project=#{config.name} app create --region=#{config.region}"
+  end
+
+  task :deploy  do
+    sh "gcloud --project=#{config.name} app deploy --stop-previous-version nocache/app.yaml"
+  end
+
+  task :open do
+    sh "open #{camhd_app_dev.url()}"
+  end
+
+end
+
+
 
 namespace :docker do
 
