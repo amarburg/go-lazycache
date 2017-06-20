@@ -24,7 +24,11 @@ func stripBlankElementsRight(slice []string) []string {
 	return slice
 }
 
-func timeTrack(start time.Time, name string) {
+func logDuration(start time.Time, name string) {
 	elapsed := time.Since(start)
 	log.Printf("%s took %s", name, elapsed)
+}
+
+func timeTrack(start time.Time, elapsed *time.Duration) {
+	*elapsed = time.Since(start)
 }

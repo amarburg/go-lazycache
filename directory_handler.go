@@ -22,12 +22,11 @@ var DirCache DirMapStore
 
 func init() {
 	DirCache = DirMapStore{
-		Cache: make(map[string](*DirListing) ),
+		Cache: make(map[string](*DirListing)),
 	}
 }
 
-
-func getDirectory( node *Node ) (*DirListing, error ) {
+func getDirectory(node *Node) (*DirListing, error) {
 
 	// Initialize or update as necessary
 	DirCache.Mutex.Lock()
@@ -36,7 +35,7 @@ func getDirectory( node *Node ) (*DirListing, error ) {
 	cacheKey := node.Fs.OriginalPath(node.Path)
 	//DefaultLogger.Log("msg", fmt.Sprintf("Checking cache key: %s", cacheKey))
 
-	listing, has := DirCache.Cache[ cacheKey ]
+	listing, has := DirCache.Cache[cacheKey]
 
 	if !has {
 		DefaultLogger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
@@ -46,7 +45,7 @@ func getDirectory( node *Node ) (*DirListing, error ) {
 		//DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories)))
 
 		if err == nil {
-			DirCache.Cache[ cacheKey ] = listing
+			DirCache.Cache[cacheKey] = listing
 		}
 		// else {
 		// 	DefaultLogger.Log("msg", fmt.Sprintf("Errors querying remote directory: %s", node.Path))
@@ -64,15 +63,13 @@ func getDirectory( node *Node ) (*DirListing, error ) {
 	return listing, nil
 }
 
-
-
 func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
-	listing, err := getDirectory( node )
+	listing, err := getDirectory(node)
 
 	if err != nil {
-		http.Error( w, fmt.Sprintf("Error retrieving directory: %s", err.Error() ), 500)
+		http.Error(w, fmt.Sprintf("Error retrieving directory: %s", err.Error()), 500)
 		return nil
 	}
 

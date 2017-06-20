@@ -4,11 +4,13 @@ import "fmt"
 import "net/http"
 import "strings"
 import "strconv"
+import "path/filepath"
 
 //import "strings"
 import "io"
 import "encoding/json"
 import "github.com/amarburg/go-fast-png"
+import "image/jpeg"
 import "bytes"
 import "regexp"
 import "time"
@@ -25,34 +27,43 @@ type QTMetadata struct {
 	Duration  float32
 }
 
-type LQTStore struct {
+type QTStore struct {
 	Cache map[string](*lazyquicktime.LazyQuicktime)
 	Mutex sync.Mutex
+
+	Stats struct {
+		Requests, Misses int64
+	}
 }
 
-var QTMetadataStore LQTStore
+var qtCache QTStore
 
 func init() {
-	QTMetadataStore = LQTStore{
+	qtCache = QTStore{
 		Cache: make(map[string](*lazyquicktime.LazyQuicktime)),
 	}
+}
+
+type MoovHandlerTiming struct {
+	Handler, Extraction, Encode time.Duration
 }
 
 func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 
 	//DefaultLogger.Log("debug", fmt.Sprintf("Locking metadata store for %s", node.Path))
-	QTMetadataStore.Mutex.Lock()
-	defer QTMetadataStore.Mutex.Unlock()
+	qtCache.Mutex.Lock()
+	defer qtCache.Mutex.Unlock()
+
+	qtCache.Stats.Requests++
 
 	// Initialize or update as necessary
 	//DefaultLogger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
-	lqt, has := QTMetadataStore.Cache[node.trimPath]
+	lqt, has := qtCache.Cache[node.trimPath]
 
 	if !has {
-		//DefaultLogger.Log("debug", fmt.Sprintf("%s: Not in metdatadata store, querying CI", node.Path))
+		qtCache.Stats.Misses++
 		fs, err := node.Fs.LazyFile(node.Path)
 
-		//fs, err := lazyfs.OpenHttpSource(uri)
 		if err != nil {
 			return nil, fmt.Errorf("Something's went boom opening the HTTP Source!")
 		}
@@ -63,16 +74,16 @@ func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
 		}
 
-
 		//DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
-		QTMetadataStore.Cache[node.trimPath] = lqt
+		qtCache.Cache[node.trimPath] = lqt
 		if err != nil {
 			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
 		}
 
 	}
 	//else {
-	//DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
+	// Could record cache misses
+	// DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
 	//}
 
 	return lqt, nil
@@ -81,6 +92,7 @@ func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	DefaultLogger.Log("msg", fmt.Sprintf("Quicktime handler: %s with residual path (%d): (%s)", node.Path, len(path), strings.Join(path, ":")))
 
+	timing := MoovHandlerTiming{}
 	movStart := time.Now()
 
 	// uri := node.Fs.Uri
@@ -118,18 +130,21 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		// Handle any residual path elements (frames, etc) here
 		switch strings.ToLower(path[0]) {
 		case "frame":
-			handleFrame(node, lqt, path[1:], w, req)
+			extractFrame(node, lqt, path[1:], w, req, &timing)
 		default:
 			http.Error(w, fmt.Sprintf("Didn't understand request \"%s\"", path[0]), 500)
 		}
 	}
 
-	timeTrack(movStart, "Moov handler")
+	timeTrack(movStart, &timing.Handler)
+
+	t, _ := json.Marshal(timing)
+	DefaultLogger.Log("timing", t)
 
 	return nil
 }
 
-func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w http.ResponseWriter, req *http.Request) {
+func extractFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w http.ResponseWriter, req *http.Request, timing *MoovHandlerTiming) {
 
 	if len(path) == 0 {
 		http.Error(w, fmt.Sprintf("Need to specify frame number"), 500)
@@ -147,18 +162,36 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 		http.Error(w, fmt.Sprintf("Requested frame %d in movie of length %d frames", frameNum, lqt.NumFrames()), 400)
 		return
 	}
+
 	if frameNum < 1 {
 		http.Error(w, "Requested frame 0, Quicktime movies start with frame 1", 400)
 		return
 	}
 
-	UUID := req.URL.Path + ".png"
-	url, ok := DefaultImageStore.Url(UUID)
+	// Looks for extension
+	extension := filepath.Ext(path[0])
+
+	var contentType string
+
+	switch extension {
+	case ".jpg", ".jpeg":
+		contentType = "image/jpeg"
+		extension = ".jpg"
+	case "", ".png":
+		extension = ".png"
+		contentType = "image/png"
+	default:
+		http.Error(w, fmt.Sprintf("Unknown image extension \"%s\"", extension), 500)
+		return
+	}
+
+	UUID := req.URL.Path + extension
+	url, ok := ImageCache.Url(UUID)
 
 	if ok {
 		DefaultLogger.Log("msg", fmt.Sprintf("Image %s exists in the Image store at %s", UUID, url))
 		// Set Content-Type or response
-		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Content-Type", contentType)
 		// w.Header().Set("Location", url)
 		DefaultLogger.Log("msg", fmt.Sprintf("Redirecting to %s", url))
 		http.Redirect(w, req, url, http.StatusTemporaryRedirect)
@@ -171,24 +204,30 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 			http.Error(w, fmt.Sprintf("Error generating image for frame %d: %s", frameNum, err.Error()), 500)
 			return
 		}
-		timeTrack(startExt, "Frame extraction")
+		timeTrack(startExt, &timing.Extraction)
 
 		buffer := new(bytes.Buffer)
 
-		encoder := fastpng.Encoder{
-			CompressionLevel: fastpng.DefaultCompression,
+		startEncode := time.Now()
+
+		switch contentType {
+		case "image/png":
+			encoder := fastpng.Encoder{
+				CompressionLevel: fastpng.DefaultCompression,
+			}
+			err = encoder.Encode(buffer, img)
+		case "image/jpeg":
+			err = jpeg.Encode(buffer, img, &jpeg.Options{Quality: jpeg.DefaultQuality})
 		}
 
-		startEncode := time.Now()
-		err = encoder.Encode(buffer, img)
-		timeTrack(startEncode, "Png encode")
+		timeTrack(startEncode, &timing.Encode)
 
-		fmt.Println("PNG size", buffer.Len()/(1024*1024), "MB")
+		DefaultLogger.Log("debug", fmt.Sprintf("%s size %d MB\n", contentType, buffer.Len()/(1024*1024)))
 
 		imgReader := bytes.NewReader(buffer.Bytes())
 
 		// write image to Image store
-		DefaultImageStore.Store(UUID, imgReader)
+		ImageCache.Store(UUID, imgReader)
 
 		//Rewind the io, and write to the HTTP channel
 		imgReader.Seek(0, io.SeekStart)
@@ -198,7 +237,7 @@ func handleFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w 
 			fmt.Printf("Error writing to HTTP buffer: %s\n", err.Error())
 		}
 
-		timeTrack(startExt, "Full extract and write")
+		// timeTrack(startExt, "Full extract and write")
 
 	}
 

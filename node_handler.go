@@ -39,7 +39,7 @@ func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Launch into the tree
 	root.Handle(root.node, elements, w, req)
 
-	timeTrack(reqStart, "Full HTTP request")
+	logDuration(reqStart, "Full HTTP request")
 }
 
 func (root *RootNode) Handle(node *Node, path []string, w http.ResponseWriter, req *http.Request) {

@@ -70,14 +70,14 @@ func ConfigureImageStoreFromViper() {
 	switch strings.ToLower(storeKey) {
 	default:
 		DefaultLogger.Log("msg", fmt.Sprintf("Unable to determine type of image store from \"%s\"", storeKey))
-		DefaultImageStore = NullImageStore{}
+		ImageCache = NullImageStore{}
 	case "", "none":
 		DefaultLogger.Log("msg", "No image store configured.")
-		DefaultImageStore = NullImageStore{}
+		ImageCache = NullImageStore{}
 	case "local":
-		DefaultImageStore = CreateLocalStore(viper.GetString("imagestore.root"), viper.GetString("imagestore.url"))
+		ImageCache = CreateLocalStore(viper.GetString("imagestore.root"), viper.GetString("imagestore.url"))
 	case "google":
-		DefaultImageStore = CreateGoogleStore(viper.GetString("imagestore.bucket"))
+		ImageCache = CreateGoogleStore(viper.GetString("imagestore.bucket"))
 	}
 }
 

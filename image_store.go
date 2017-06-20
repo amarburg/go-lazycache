@@ -14,22 +14,22 @@ type ImageStore interface {
 	//  Statistics() ( interface {} )
 }
 
-var DefaultImageStore ImageStore = NullImageStore{}
+var ImageCache ImageStore = NullImageStore{}
 
 //
 // // Singletons which wrap the
 // func Has(key string) bool {
-// 	return DefaultImageStore.Has(key)
+// 	return ImageCache.Has(key)
 // }
 //
 // func Store(key string, data io.Reader) {
-// 	DefaultImageStore.Store(key, data)
+// 	ImageCache.Store(key, data)
 // }
 //
 // func Retrieve(key string) (io.Reader, error) {
-// 	return DefaultImageStore.Retrieve(key)
+// 	return ImageCache.Retrieve(key)
 // }
 //
 // func Url(key string) (string, bool) {
-// 	return DefaultImageStore.Url(key)
+// 	return ImageCache.Url(key)
 // }
