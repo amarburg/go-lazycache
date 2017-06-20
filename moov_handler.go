@@ -45,11 +45,11 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	lqt := &lazyquicktime.LazyQuicktime{}
 
 	{
-		DefaultLogger.Log("debug", fmt.Sprintf("Locking metdatadata store for %s", node.Path))
+		DefaultLogger.Log("debug", fmt.Sprintf("Locking metadata store for %s", node.Path))
 		QTMetadataStore.Lock()
 		defer QTMetadataStore.Unlock()
 
-		DefaultLogger.Log("debug", fmt.Sprintf("Querying metdatadata store for %s", node.Path))
+		DefaultLogger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
 		has, _ := QTMetadataStore.Get(node.trimPath, lqt)
 
 		if !has {
@@ -80,6 +80,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 				http.Error(w, fmt.Sprintf("Something's went boom storing the quicktime file: %s", err.Error()), 500)
 				return nil
 			}
+
 		} else {
 			DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
 		}

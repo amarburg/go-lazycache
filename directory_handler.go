@@ -22,6 +22,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 
 	// Initialize or update as necessary
 	DirKeyStore.Lock()
+	defer DirKeyStore.Unlock()
 
 	// TODO:  Handler error condition
 	listing := &DirListing{}
@@ -55,7 +56,6 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		node.BootstrapDirectory(*listing)
 	}
 
-	DirKeyStore.Unlock()
 
 	//DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
 

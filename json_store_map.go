@@ -6,16 +6,12 @@ import (
 	"sync"
 )
 
-//import "net/url"
-
-// import "github.com/amarburg/go-lazyfs"
-// import "github.com/amarburg/go-lazyquicktime"
-
 import prom "github.com/prometheus/client_golang/prometheus"
 
 type JSONStore interface {
 	Get(key string, ptr interface{}) (bool, error)
 	Update(key string, value interface{}) error
+
 	Lock()
 	Unlock()
 }
