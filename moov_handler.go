@@ -25,11 +25,8 @@ type QTMetadata struct {
 	Duration  float32
 }
 
-//const qtPrefix = "qt."
-
 type LQTStore struct {
 	Cache map[string](*lazyquicktime.LazyQuicktime)
-
 	Mutex sync.Mutex
 }
 
@@ -66,7 +63,6 @@ func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
 		}
 
-		//fmt.Println(lqt)
 
 		//DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
 		QTMetadataStore.Cache[node.trimPath] = lqt
@@ -74,7 +70,8 @@ func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
 		}
 
-	} //else {
+	}
+	//else {
 	//DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
 	//}
 

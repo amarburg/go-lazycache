@@ -45,8 +45,8 @@ func ViperConfiguration() {
 	flag.String("image-store-root", "", "Path to local image store directory (must be writable)")
 	flag.String("image-store-url", "", "Root URL for webserver which serves image store directory")
 
-	flag.String("quicktime-store", "", "Type of quicktime store (none, redis)")
-	flag.String("directory-store", "", "Type of directory store (none, redis)")
+	// flag.String("quicktime-store", "", "Type of quicktime store (none, redis)")
+	// flag.String("directory-store", "", "Type of directory store (none, redis)")
 	flag.String("redis-host", "localhost:6379", "Host used for redis store")
 
 	viper.BindPFlag("port", flag.Lookup("port"))
@@ -57,8 +57,8 @@ func ViperConfiguration() {
 	viper.BindPFlag("imagestore.root", flag.Lookup("image-store-root"))
 	viper.BindPFlag("imagestore.url", flag.Lookup("image-store-url"))
 
-	viper.BindPFlag("directorystore", flag.Lookup("directory-store"))
-	viper.BindPFlag("quicktimestore", flag.Lookup("quicktime-store"))
+	//viper.BindPFlag("directorystore", flag.Lookup("directory-store"))
+	//viper.BindPFlag("quicktimestore", flag.Lookup("quicktime-store"))
 	viper.BindPFlag("redishost", flag.Lookup("redis-host"))
 
 	flag.Parse()
@@ -81,59 +81,9 @@ func ConfigureImageStoreFromViper() {
 	}
 }
 
-// func ConfigureQuicktimeStoreFromViper() {
-// 	storeKey := viper.GetString("quicktimestore")
-// 	DefaultLogger.Log("msg", fmt.Sprintf("Configuring quicktime store with type \"%s\"", storeKey))
-//
-// 	switch strings.ToLower(storeKey) {
-// 	default:
-// 		DefaultLogger.Log("msg", fmt.Sprintf("Unable to determine type of image store from \"%s\"", storeKey))
-// 		QTMetadataStore = CreateMapJSONStore()
-// 	case "", "none":
-// 		DefaultLogger.Log("msg", "Using default QuicktimeStore.")
-// 		QTMetadataStore = CreateMapJSONStore()
-// 	case "redis":
-// 		hostname := viper.GetString("redishost")
-// 		DefaultLogger.Log("msg", fmt.Sprintf("Connecting to redis host \"%s\"", hostname))
-// 		redis, err := CreateRedisJSONStore(hostname, "qt")
-// 		if err != nil {
-// 			DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis Quicktime store to host \"%s\"", hostname))
-// 		}
-//
-// 		DefaultLogger.Log("msg", fmt.Sprintf("Logging movie metadata to Redis at %s", hostname))
-// 		QTMetadataStore = redis
-// 	}
-// }
-
-func ConfigureDirectoryStoreFromViper() {
-	storeKey := viper.GetString("directorystore")
-	DefaultLogger.Log("msg", fmt.Sprintf("Configuring directory store with type \"%s\"", storeKey))
-
-	switch strings.ToLower(storeKey) {
-	default:
-		DefaultLogger.Log("msg", fmt.Sprintf("Unable to determine type of directory store from \"%s\"", storeKey))
-		DirKeyStore = CreateMapJSONStore()
-	case "", "none":
-		DefaultLogger.Log("msg", "Using default directory store.")
-		DirKeyStore = CreateMapJSONStore()
-	case "redis":
-		hostname := viper.GetString("redishost")
-		DefaultLogger.Log("msg", fmt.Sprintf("Connecting to redis host \"%s\"", hostname))
-		redis, err := CreateRedisJSONStore(hostname, "dir")
-		if err != nil {
-			DefaultLogger.Log("msg", fmt.Sprintf("Failed to configure Redis directory store to host \"%s\"", hostname))
-		}
-
-		DefaultLogger.Log("msg", fmt.Sprintf("Logging directory metadata to Redis at %s", hostname))
-		DirKeyStore = redis
-	}
-}
-
 func ConfigureFromViper() {
 	ViperConfiguration()
 
 	DefaultLogger.Log("msg", "In ConfigureFromViper")
 	ConfigureImageStoreFromViper()
-	ConfigureDirectoryStoreFromViper()
-	//ConfigureQuicktimeStoreFromViper()
 }

@@ -5,55 +5,75 @@ import "fmt"
 import "encoding/json"
 import "strings"
 
+import "sync"
+
 type DirListing struct {
 	Path        string
 	Files       []string
 	Directories []string
 }
 
-var DirKeyStore JSONStore
-
-func init() {
-	DirKeyStore = CreateMapJSONStore()
+type DirMapStore struct {
+	Cache map[string](*DirListing)
+	Mutex sync.Mutex
 }
 
-func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
-	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
+var DirCache DirMapStore
+
+func init() {
+	DirCache = DirMapStore{
+		Cache: make(map[string](*DirListing) ),
+	}
+}
+
+
+func getDirectory( node *Node ) (*DirListing, error ) {
 
 	// Initialize or update as necessary
-	DirKeyStore.Lock()
-	defer DirKeyStore.Unlock()
+	DirCache.Mutex.Lock()
+	defer DirCache.Mutex.Unlock()
 
-	// TODO:  Handler error condition
-	listing := &DirListing{}
 	cacheKey := node.Fs.OriginalPath(node.Path)
 	//DefaultLogger.Log("msg", fmt.Sprintf("Checking cache key: %s", cacheKey))
 
-	ok, err := DirKeyStore.Get(cacheKey, listing)
-	if err != nil {
-		DefaultLogger.Log("msg", fmt.Sprintf("Error checking the keystore: %s", err.Error()))
-	}
+	listing, has := DirCache.Cache[ cacheKey ]
 
-	if !ok {
+	if !has {
 		DefaultLogger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
+		var err error
 		listing, err = node.Fs.ReadDir(node.Path)
+
 		//DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories)))
 
 		if err == nil {
-			DirKeyStore.Update(cacheKey, *listing)
-		} else {
-			DefaultLogger.Log("msg", fmt.Sprintf("Errors querying remote directory: %s", node.Path))
+			DirCache.Cache[ cacheKey ] = listing
 		}
-		//fmt.Printf("new listing of %s: %v\n", node.Path, listing)
+		// else {
+		// 	DefaultLogger.Log("msg", fmt.Sprintf("Errors querying remote directory: %s", node.Path))
+		// }
 	}
 
-	// This needs to be within a lock because node.Children is updated...
-	// TODO, give it its own mutex
+	// This needs to be inside the mutex because it changes listing
 	// How else can I tell if the node tree needs to be updated?
 	if len(node.Children) != len(listing.Directories)+len(listing.Files) {
 		DefaultLogger.Log("msg", fmt.Sprintf("Bootstrapping directory %s (%d != %d+%d)", node.Path,
 			len(node.Children), len(listing.Directories), len(listing.Files)))
 		node.BootstrapDirectory(*listing)
+	}
+
+	return listing, nil
+}
+
+
+
+func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
+	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
+
+	listing, err := getDirectory( node )
+
+	if err != nil {
+		http.Error( w, fmt.Sprintf("Error retrieving directory: %s", err.Error() ), 500)
+		return nil
 	}
 
 	//DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
