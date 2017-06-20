@@ -1,17 +1,16 @@
 FROM amarburg/golang-ffmpeg:wheezy-1.8
 
-RUN go get -v github.com/amarburg/go-lazycache-app
+RUN go get -v github.com/amarburg/go-lazycache
 
-#
-## Hot-patch main.go from this directory into go-lazycache-app
-#
-#ADD main.go $GOPATH/src/github.com/amarburg/go-lazycache-app/app/
+## Hot patch local files into the repo
+ADD *.go $GOPATH/src/amarburg/go-lazycache/app/
 
-RUN go build -v github.com/amarburg/go-lazycache-app/deploy/docker
-RUN go install -v github.com/amarburg/go-lazycache-app/deploy/docker
+WORKDIR $GOPATH/src/github.com/amarburg/go-lazycache/app
+RUN go get -v .
+RUN go build -o lazycache .
+RUN cp lazycache $GOPATH/
 
 VOLUME ["/srv/image_store"]
-VOLUME ["/data"]
 
 ENV LAZYCACHE_PORT=8080
 

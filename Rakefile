@@ -33,6 +33,17 @@ namespace :test do
 end
 
 
+namespace :docker do
+  task :build do
+    sh "docker build -f Dockerfile --tag lazycache:dev ."
+  end
+
+  task :run do
+    sh "docker run --rm --publish 8080:8080 lazycache:dev"
+  end
+end
+
+
 namespace :wercker do
 
   desc "Build Wecker locally using wercker CLI"

@@ -5,9 +5,10 @@ FROM amarburg/golang-ffmpeg:wheezy-1.8
 #
 ADD . $GOPATH/src/github.com/amarburg/go-lazycache
 
-RUN go get -v github.com/amarburg/go-lazycache/app
-RUN go build -v github.com/amarburg/go-lazycache/app
-RUN go install -v github.com/amarburg/go-lazycache/app
+WORKDIR $GOPATH/src/github.com/amarburg/go-lazycache/app
+RUN go get -v .
+RUN go build -o lazycache .
+RUN cp lazycache $GOPATH/
 
 VOLUME ["/srv/image_store"]
 
