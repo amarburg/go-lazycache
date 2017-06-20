@@ -66,13 +66,13 @@ func ViperConfiguration() {
 
 func ConfigureImageStoreFromViper() {
 	storeKey := viper.GetString("imagestore")
-	DefaultLogger.Log("msg", fmt.Sprintf("Configuring image store with type \"%s\"", storeKey))
+	Logger.Log("msg", fmt.Sprintf("Configuring image store with type \"%s\"", storeKey))
 	switch strings.ToLower(storeKey) {
 	default:
-		DefaultLogger.Log("msg", fmt.Sprintf("Unable to determine type of image store from \"%s\"", storeKey))
+		Logger.Log("msg", fmt.Sprintf("Unable to determine type of image store from \"%s\"", storeKey))
 		ImageCache = NullImageStore{}
 	case "", "none":
-		DefaultLogger.Log("msg", "No image store configured.")
+		Logger.Log("msg", "No image store configured.")
 		ImageCache = NullImageStore{}
 	case "local":
 		ImageCache = CreateLocalStore(viper.GetString("imagestore.root"), viper.GetString("imagestore.url"))
@@ -84,6 +84,6 @@ func ConfigureImageStoreFromViper() {
 func ConfigureFromViper() {
 	ViperConfiguration()
 
-	DefaultLogger.Log("msg", "In ConfigureFromViper")
+	Logger.Log("msg", "In ConfigureFromViper")
 	ConfigureImageStoreFromViper()
 }

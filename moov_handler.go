@@ -21,10 +21,8 @@ import "github.com/amarburg/go-lazyquicktime"
 
 var leadingNumbers, _ = regexp.Compile("^\\d+")
 
-type QTMetadata struct {
-	URL       string
-	NumFrames int
-	Duration  float32
+type MoovHandlerTiming struct {
+	Handler, Extraction, Encode time.Duration
 }
 
 type QTStore struct {
@@ -44,53 +42,45 @@ func init() {
 	}
 }
 
-type MoovHandlerTiming struct {
-	Handler, Extraction, Encode time.Duration
-}
+func (cache *QTStore) getLQT(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 
-func retrieveLazyQuicktime(node *Node) (*lazyquicktime.LazyQuicktime, error) {
+	//Logger.Log("debug", fmt.Sprintf("Locking metadata store for %s", node.Path))
+	cache.Mutex.Lock()
+	defer cache.Mutex.Unlock()
 
-	//DefaultLogger.Log("debug", fmt.Sprintf("Locking metadata store for %s", node.Path))
-	qtCache.Mutex.Lock()
-	defer qtCache.Mutex.Unlock()
-
-	qtCache.Stats.Requests++
+	cache.Stats.Requests++
 
 	// Initialize or update as necessary
-	//DefaultLogger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
-	lqt, has := qtCache.Cache[node.trimPath]
+	//Logger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
+	lqt, has := cache.Cache[node.trimPath]
 
 	if !has {
-		qtCache.Stats.Misses++
+		cache.Stats.Misses++
 		fs, err := node.Fs.LazyFile(node.Path)
 
 		if err != nil {
 			return nil, fmt.Errorf("Something's went boom opening the HTTP Source!")
 		}
 
-		//DefaultLogger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
+		//Logger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
 		lqt, err = lazyquicktime.LoadMovMetadata(fs)
 		if err != nil {
 			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
 		}
 
-		//DefaultLogger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
-		qtCache.Cache[node.trimPath] = lqt
+		//Logger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
+		cache.Cache[node.trimPath] = lqt
 		if err != nil {
 			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
 		}
 
 	}
-	//else {
-	// Could record cache misses
-	// DefaultLogger.Log("msg", fmt.Sprintf("Map store had entry for %s", node.trimPath))
-	//}
 
 	return lqt, nil
 }
 
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
-	DefaultLogger.Log("msg", fmt.Sprintf("Quicktime handler: %s with residual path (%d): (%s)", node.Path, len(path), strings.Join(path, ":")))
+	Logger.Log("msg", fmt.Sprintf("Quicktime handler: %s with residual path (%d): (%s)", node.Path, len(path), strings.Join(path, ":")))
 
 	timing := MoovHandlerTiming{}
 	movStart := time.Now()
@@ -98,31 +88,35 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	// uri := node.Fs.Uri
 	// uri.Path += node.Path
 	//
-	lqt, err := retrieveLazyQuicktime(node)
+	lqt, err := qtCache.getLQT(node)
 
 	if err != nil {
-		DefaultLogger.Log("msg", err.Error())
+		Logger.Log("msg", err.Error())
 		http.Error(w, err.Error(), 500)
 	}
 
 	if len(path) == 0 {
 		// Leaf node
 
-		DefaultLogger.Log("msg", fmt.Sprintf("Returning movie information for %s", node.Path))
+		Logger.Log("msg", fmt.Sprintf("Returning movie information for %s", node.Path))
 
-		out := QTMetadata{
+		// Temporary structure for JSON output
+		out := struct {
+			URL       string
+			NumFrames int
+			Duration  float32
+		}{
 			URL:       node.Path,
 			NumFrames: lqt.NumFrames(),
 			Duration:  lqt.Duration(),
 		}
 
-		// Temporary structure for JSON output
 		b, err := json.MarshalIndent(out, "", "  ")
 		if err != nil {
 			fmt.Fprintln(w, "JSON error:", err)
 		}
 
-		DefaultLogger.Log("msg", fmt.Sprintf("..... done"))
+		Logger.Log("msg", fmt.Sprintf("..... done"))
 
 		w.Write(b)
 	} else {
@@ -139,7 +133,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	timeTrack(movStart, &timing.Handler)
 
 	t, _ := json.Marshal(timing)
-	DefaultLogger.Log("timing", t)
+	Logger.Log("timing", t)
 
 	return nil
 }
@@ -189,11 +183,11 @@ func extractFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w
 	url, ok := ImageCache.Url(UUID)
 
 	if ok {
-		DefaultLogger.Log("msg", fmt.Sprintf("Image %s exists in the Image store at %s", UUID, url))
+		Logger.Log("msg", fmt.Sprintf("Image %s exists in the Image store at %s", UUID, url))
 		// Set Content-Type or response
 		w.Header().Set("Content-Type", contentType)
 		// w.Header().Set("Location", url)
-		DefaultLogger.Log("msg", fmt.Sprintf("Redirecting to %s", url))
+		Logger.Log("msg", fmt.Sprintf("Redirecting to %s", url))
 		http.Redirect(w, req, url, http.StatusTemporaryRedirect)
 
 	} else {
@@ -222,22 +216,18 @@ func extractFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w
 
 		timeTrack(startEncode, &timing.Encode)
 
-		DefaultLogger.Log("debug", fmt.Sprintf("%s size %d MB\n", contentType, buffer.Len()/(1024*1024)))
+		Logger.Log("debug", fmt.Sprintf("%s size %d MB\n", contentType, buffer.Len()/(1024*1024)))
 
 		imgReader := bytes.NewReader(buffer.Bytes())
 
 		// write image to Image store
 		ImageCache.Store(UUID, imgReader)
 
-		//Rewind the io, and write to the HTTP channel
 		imgReader.Seek(0, io.SeekStart)
 		_, err = imgReader.WriteTo(w)
-		//fmt.Printf("Wrote %d bytes to http buffer\n", n)
 		if err != nil {
 			fmt.Printf("Error writing to HTTP buffer: %s\n", err.Error())
 		}
-
-		// timeTrack(startExt, "Full extract and write")
 
 	}
 

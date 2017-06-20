@@ -30,7 +30,7 @@ func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	reqStart := time.Now()
 
-	//DefaultLogger.Log("msg", fmt.Sprintf("In rootNode::ServeHTTP for %#v", root))
+	//Logger.Log("msg", fmt.Sprintf("In rootNode::ServeHTTP for %#v", root))
 
 	// Sanitive the input URL
 	shortPath := strings.TrimPrefix(req.URL.Path, root.node.trimPath)
@@ -93,12 +93,12 @@ func MakeRootNode(fs FileSystem, root string) {
 		},
 	}
 
-	//DefaultLogger.Log("level", "debug",
+	//Logger.Log("level", "debug",
 	//								  "msg", fmt.Sprintf("Adding HTTP %#v handler for %s", rootNode, rootNode.node.trimPath))
 	http.Handle(rootNode.node.trimPath, rootNode)
 	rootNode.node.leafFunc = HandleDirectory
 
-	DefaultLogger.Log("level", "debug", "msg", fmt.Sprintf("Adding root node %s", rootNode.node.trimPath))
+	Logger.Log("level", "debug", "msg", fmt.Sprintf("Adding root node %s", rootNode.node.trimPath))
 
 	RootMap[fs.OriginalPath("")] = rootNode
 

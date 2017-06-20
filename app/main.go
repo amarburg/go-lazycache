@@ -20,7 +20,7 @@ func StartLazycacheServer(bind string, port int) *stoppable_http_server.SLServer
 	http.DefaultServeMux = http.NewServeMux()
 
 	msg := fmt.Sprintf("Listening on http://%s:%d/", bind, port)
-	lazycache.DefaultLogger.Log("msg", msg)
+	lazycache.Logger.Log("msg", msg)
 
 	server := stoppable_http_server.StartServer(func(config *stoppable_http_server.HttpConfig) {
 		config.Host = bind

@@ -121,11 +121,11 @@ func CreateLocalStore(localRoot string, addr string) *LocalImageStore {
 	store := &LocalImageStore{
 		LocalRoot: localRoot,
 		UrlRoot:   addr,
-		logger:    kitlog.With(DefaultLogger, "module", "LocalImageStore"),
+		logger:    kitlog.With(Logger, "module", "LocalImageStore"),
 		cache:     make(map[string]int),
 	}
 
-	DefaultLogger.Log("msg",
+	Logger.Log("msg",
 		fmt.Sprintf("Creating local image store at \"%s\", exposed at \"%s\"\n", store.LocalRoot, store.UrlRoot))
 
 	s := &http.Server{

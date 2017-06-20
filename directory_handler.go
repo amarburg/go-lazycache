@@ -26,36 +26,36 @@ func init() {
 	}
 }
 
-func getDirectory(node *Node) (*DirListing, error) {
+func (cache *DirMapStore) getDirectory(node *Node) (*DirListing, error) {
 
 	// Initialize or update as necessary
-	DirCache.Mutex.Lock()
-	defer DirCache.Mutex.Unlock()
+	cache.Mutex.Lock()
+	defer cache.Mutex.Unlock()
 
 	cacheKey := node.Fs.OriginalPath(node.Path)
-	//DefaultLogger.Log("msg", fmt.Sprintf("Checking cache key: %s", cacheKey))
+	//Logger.Log("msg", fmt.Sprintf("Checking cache key: %s", cacheKey))
 
-	listing, has := DirCache.Cache[cacheKey]
+	listing, has := cache.Cache[cacheKey]
 
 	if !has {
-		DefaultLogger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
+		Logger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
 		var err error
 		listing, err = node.Fs.ReadDir(node.Path)
 
-		//DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories)))
+		//Logger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories)))
 
 		if err == nil {
-			DirCache.Cache[cacheKey] = listing
+			cache.Cache[cacheKey] = listing
 		}
 		// else {
-		// 	DefaultLogger.Log("msg", fmt.Sprintf("Errors querying remote directory: %s", node.Path))
+		// 	Logger.Log("msg", fmt.Sprintf("Errors querying remote directory: %s", node.Path))
 		// }
 	}
 
 	// This needs to be inside the mutex because it changes listing
 	// How else can I tell if the node tree needs to be updated?
 	if len(node.Children) != len(listing.Directories)+len(listing.Files) {
-		DefaultLogger.Log("msg", fmt.Sprintf("Bootstrapping directory %s (%d != %d+%d)", node.Path,
+		Logger.Log("msg", fmt.Sprintf("Bootstrapping directory %s (%d != %d+%d)", node.Path,
 			len(node.Children), len(listing.Directories), len(listing.Files)))
 		node.BootstrapDirectory(*listing)
 	}
@@ -66,14 +66,14 @@ func getDirectory(node *Node) (*DirListing, error) {
 func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	//fmt.Printf("HandleDirectory %s with path (%d): (%s)\n", node.Path, len(path), strings.Join(path, ":"))
 
-	listing, err := getDirectory(node)
+	listing, err := DirCache.getDirectory(node)
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error retrieving directory: %s", err.Error()), 500)
 		return nil
 	}
 
-	//DefaultLogger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
+	//Logger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories\"", len(listing.Files), len(listing.Directories)))
 
 	// If there's residual path, they must be children (not a verb)
 	if len(path) > 0 {
@@ -94,7 +94,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 
 		b, err := json.MarshalIndent(listing, "", "  ")
 		if err != nil {
-			DefaultLogger.Log("level", "error", "msg", fmt.Sprintf("JSON error:", err))
+			Logger.Log("level", "error", "msg", fmt.Sprintf("JSON error:", err))
 		}
 
 		addCacheDefeatHeaders(w)

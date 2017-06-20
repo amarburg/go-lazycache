@@ -5,8 +5,8 @@ import (
 	"os"
 )
 
-var DefaultLogger kitlog.Logger
+var Logger kitlog.Logger
 
 func init() {
-	DefaultLogger = kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stderr))
+	Logger = kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stderr))
 }
