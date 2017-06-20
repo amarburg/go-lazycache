@@ -46,13 +46,4 @@ func RootHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	w.Write(b)
-	//	} else {
-
-	// 	fmt.Fprintf(w, "<html><body><ul>")
-	// 	for key, val := range RootMap {
-	// 		fmt.Fprintf(w, "<li><a href=\"%s\">%s</a></li>\n", val, key)
-	// 	}
-	// 	fmt.Fprintf(w, "</ul></body></html>")
-	// 	//fmt.Println("Indexing from ", req.URL.String())
-	// }
 }
