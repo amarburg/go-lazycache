@@ -22,7 +22,7 @@ import "github.com/amarburg/go-lazyquicktime"
 var leadingNumbers, _ = regexp.Compile("^\\d+")
 
 type MoovHandlerTiming struct {
-	Handler, Extraction, Encode time.Duration
+	Handler, Metadata, Extraction, Encode time.Duration
 }
 
 type QTStore struct {
@@ -44,7 +44,6 @@ func init() {
 
 func (cache *QTStore) getLQT(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 
-	//Logger.Log("debug", fmt.Sprintf("Locking metadata store for %s", node.Path))
 	cache.Mutex.Lock()
 	defer cache.Mutex.Unlock()
 
@@ -56,6 +55,8 @@ func (cache *QTStore) getLQT(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 
 	if !has {
 		cache.Stats.Misses++
+
+		//Logger.Log("msg", fmt.Errorf("Initializing LazyFile to %s", node.Path))
 		fs, err := node.Fs.LazyFile(node.Path)
 
 		if err != nil {
@@ -87,12 +88,24 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 
 	// uri := node.Fs.Uri
 	// uri.Path += node.Path
-	//
+
+	metadataStart := time.Now()
 	lqt, err := qtCache.getLQT(node)
+	timeTrack(metadataStart, &timing.Metadata)
 
 	if err != nil {
 		Logger.Log("msg", err.Error())
-		http.Error(w, err.Error(), 500)
+
+		b,_ := json.MarshalIndent(struct {
+							URL, Error string
+						}{
+							URL: node.Path,
+							Error: err.Error(),
+						}, "", "  ")
+
+		// http.Error(w, err.Error(), 500)
+		w.Write(b)
+		return nil
 	}
 
 	if len(path) == 0 {
@@ -116,7 +129,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 			fmt.Fprintln(w, "JSON error:", err)
 		}
 
-		Logger.Log("msg", fmt.Sprintf("..... done"))
+		//Logger.Log("msg", fmt.Sprintf("..... done"))
 
 		w.Write(b)
 	} else {
