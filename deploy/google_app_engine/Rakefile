@@ -14,32 +14,29 @@ class GCloudConfig
 end
 
 
-namespace :cache do
 
-  config = GCloudConfig.new( 'camhd-app-dev' )
+namespace :prod do
 
-  # task :activate do
-  #   sh *%W( gcloud config configurations activate #{camhd_app_dev.config} )
-  # end
+  config = GCloudConfig.new( 'camhd-cache' )
 
   task :create  do
     sh "gcloud --project=#{config.name} app create --region=#{config.region}"
   end
 
   task :deploy  do
-    sh "gcloud --project=#{config.name} app deploy --stop-previous-version cache/app.yaml"
+    sh "gcloud --project=#{config.name} app deploy --stop-previous-version nocache/app.yaml"
   end
 
   task :open do
-    sh "open #{camhd_app_dev.url()}"
+    sh "open #{config.url()}"
   end
 
 end
 
 
-namespace :nocache do
+namespace :dev do
 
-  config = GCloudConfig.new( 'camhd-app-dev-nocache' )
+  config = GCloudConfig.new( 'camhd-cache-dev' )
 
   # task :activate do
   #   sh *%W( gcloud config configurations activate #{camhd_app_dev.config} )
@@ -54,25 +51,22 @@ namespace :nocache do
   end
 
   task :open do
-    sh "open #{camhd_app_dev.url()}"
+    sh "open #{config.url()}"
   end
 
 end
 
 
 
-namespace :docker do
+namespace :forwarder do
 
-  task :build do
-    sh *%w( docker build -t go-lazycache-appengine:dev . )
-  end
+  configs = [ GCloudConfig.new( 'camhd-app-dev-nocache' ),
+              GCloudConfig.new( 'camhd-app-dev' ) ]
 
-  task :run do
-    sh *%w( docker run --rm --publish 8080:8080 go-lazycache-appengine:dev )
-  end
-
-  task :console do
-    sh *%w( docker run --rm --tty --interactive --entrypoint /bin/bash --publish-all go-lazycache-appengine:dev )
+  task :deploy  do
+    configs.each { |config|
+      sh "gcloud --project=#{config.name} app deploy --stop-previous-version forwarder/redirector.yaml forwarder/dispatch.yaml"
+    }
   end
 
 end
