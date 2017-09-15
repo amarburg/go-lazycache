@@ -118,10 +118,12 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 			URL       string
 			NumFrames int
 			Duration  float32
+			FileSize  uint64
 		}{
 			URL:       node.Path,
 			NumFrames: lqt.NumFrames(),
 			Duration:  lqt.Duration(),
+			FileSize:  uint64(lqt.FileSize()),
 		}
 
 		b, err := json.MarshalIndent(out, "", "  ")
