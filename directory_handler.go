@@ -57,10 +57,9 @@ func (cache *DirMapStore) getDirectory(node *Node) (*DirListing, error) {
 		if err == nil {
 			listing.expires = time.Now().Add( CachedExpiration )
 			cache.Cache[cacheKey] = listing
+		} else {
+			Logger.Log("msg", fmt.Sprintf("Error querying remote directory: %s", node.Path))
 		}
-		// else {
-		// 	Logger.Log("msg", fmt.Sprintf("Errors querying remote directory: %s", node.Path))
-		// }
 	}
 
 	// This needs to be inside the mutex because it changes listing
