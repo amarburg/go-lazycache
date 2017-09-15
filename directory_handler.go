@@ -4,6 +4,7 @@ import "net/http"
 import "fmt"
 import "encoding/json"
 import "strings"
+import "time"
 
 import "sync"
 
@@ -11,6 +12,7 @@ type DirListing struct {
 	Path        string
 	Files       []string
 	Directories []string
+	expires			time.Time
 }
 
 type DirMapStore struct {
@@ -19,6 +21,8 @@ type DirMapStore struct {
 }
 
 var DirCache DirMapStore
+
+const CachedExpiration = 300
 
 func init() {
 	DirCache = DirMapStore{
@@ -37,6 +41,12 @@ func (cache *DirMapStore) getDirectory(node *Node) (*DirListing, error) {
 
 	listing, has := cache.Cache[cacheKey]
 
+	if has {
+		if time.Now().After( listing.expires ) {
+			has = false
+		}
+	}
+
 	if !has {
 		Logger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
 		var err error
@@ -45,6 +55,7 @@ func (cache *DirMapStore) getDirectory(node *Node) (*DirListing, error) {
 		//Logger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories)))
 
 		if err == nil {
+			listing.expires = time.Now().Add( CachedExpiration )
 			cache.Cache[cacheKey] = listing
 		}
 		// else {
