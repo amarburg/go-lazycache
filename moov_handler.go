@@ -85,15 +85,17 @@ func (cache *QTStore) getLQT(node *Node) (*QTEntry, error) {
 		}
 
 		//Logger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
-		cache.Cache[node.trimPath] = &QTEntry{
+		qte = &QTEntry{
 			lqt: lqt,
 			metadata: moovOutputMetadata{
-				FileSize:  lqt.FileSize(),
+				FileSize:  lqt.FileSize,
 				URL:       node.Path,
 				NumFrames: lqt.NumFrames(),
 				Duration:  lqt.Duration(),
 			},
 		}
+
+		cache.Cache[node.trimPath] = qte
 
 	} else {
 		Logger.Log("msg", fmt.Sprintf("lqt cache has entry for %s", node.Path))
@@ -151,7 +153,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		// Handle any residual path elements (frames, etc) here
 		switch strings.ToLower(path[0]) {
 		case "frame":
-			extractFrame(node, qte.lqt, path[1:], w, req, &timing)
+			extractFrame(node, qte, path[1:], w, req, &timing)
 		default:
 			http.Error(w, fmt.Sprintf("Didn't understand request \"%s\"", path[0]), 500)
 		}
@@ -165,7 +167,12 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	return nil
 }
 
-func extractFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w http.ResponseWriter, req *http.Request, timing *MoovHandlerTiming) {
+func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter, req *http.Request, timing *MoovHandlerTiming) {
+
+	if qte == nil || qte.lqt == nil {
+		http.Error(w, "Error in extractFrame", 500)
+		return
+	}
 
 	if len(path) == 0 {
 		http.Error(w, fmt.Sprintf("Need to specify frame number"), 500)
@@ -179,8 +186,8 @@ func extractFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w
 		return
 	}
 
-	if frameNum > lqt.NumFrames() {
-		http.Error(w, fmt.Sprintf("Requested frame %d in movie of length %d frames", frameNum, lqt.NumFrames()), 400)
+	if frameNum > qte.metadata.NumFrames {
+		http.Error(w, fmt.Sprintf("Requested frame %d in movie of length %d frames", frameNum, qte.metadata.NumFrames), 400)
 		return
 	}
 
@@ -220,7 +227,7 @@ func extractFrame(node *Node, lqt *lazyquicktime.LazyQuicktime, path []string, w
 	} else {
 
 		startExt := time.Now()
-		img, err := lqt.ExtractFrame(frameNum)
+		img, err := qte.lqt.ExtractFrame(frameNum)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error generating image for frame %d: %s", frameNum, err.Error()), 500)
 			return
