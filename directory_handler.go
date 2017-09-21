@@ -22,7 +22,8 @@ type DirMapStore struct {
 
 var DirCache DirMapStore
 
-const CachedExpiration = 300
+// a Duration, measured in nanoseconds
+const CachedExpiration = 5 * time.Minute
 
 func init() {
 	DirCache = DirMapStore{
@@ -48,7 +49,7 @@ func (cache *DirMapStore) getDirectory(node *Node) (*DirListing, error) {
 	}
 
 	if !has {
-		Logger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
+		//Logger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
 		var err error
 		listing, err = node.Fs.ReadDir(node.Path)
 
@@ -56,6 +57,7 @@ func (cache *DirMapStore) getDirectory(node *Node) (*DirListing, error) {
 
 		if err == nil {
 			listing.expires = time.Now().Add( CachedExpiration )
+			//Logger.Log( "msg", fmt.Sprintf("Created cache entry for %s, current time is %s,  expires at %s", cacheKey, time.Now(), listing.expires.String() ))
 			cache.Cache[cacheKey] = listing
 		} else {
 			Logger.Log("msg", fmt.Sprintf("Error querying remote directory: %s", node.Path))
