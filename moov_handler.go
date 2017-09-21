@@ -21,12 +21,27 @@ import "github.com/amarburg/go-lazyquicktime"
 
 var leadingNumbers, _ = regexp.Compile("^\\d+")
 
+//go:generate easyjson -all $GOFILE
+// I've isolated these structs so I can use ffjson
+
 type MoovHandlerTiming struct {
 	Handler, Metadata, Extraction, Encode time.Duration
 }
 
+type moovOutputMetadata struct {
+	URL       string
+	NumFrames int
+	Duration  float32
+	FileSize  int64
+}
+
+type QTEntry struct {
+	lqt      *lazyquicktime.LazyQuicktime
+	metadata moovOutputMetadata
+}
+
 type QTStore struct {
-	Cache map[string](*lazyquicktime.LazyQuicktime)
+	Cache map[string](*QTEntry)
 	Mutex sync.Mutex
 
 	Stats struct {
@@ -38,11 +53,11 @@ var qtCache QTStore
 
 func init() {
 	qtCache = QTStore{
-		Cache: make(map[string](*lazyquicktime.LazyQuicktime)),
+		Cache: make(map[string](*QTEntry)),
 	}
 }
 
-func (cache *QTStore) getLQT(node *Node) (*lazyquicktime.LazyQuicktime, error) {
+func (cache *QTStore) getLQT(node *Node) (*QTEntry, error) {
 
 	cache.Mutex.Lock()
 	defer cache.Mutex.Unlock()
@@ -50,8 +65,8 @@ func (cache *QTStore) getLQT(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 	cache.Stats.Requests++
 
 	// Initialize or update as necessary
-	//Logger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
-	lqt, has := cache.Cache[node.trimPath]
+	Logger.Log("debug", fmt.Sprintf("Querying metadata store for %s", node.Path))
+	qte, has := cache.Cache[node.trimPath]
 
 	if !has {
 		cache.Stats.Misses++
@@ -60,24 +75,31 @@ func (cache *QTStore) getLQT(node *Node) (*lazyquicktime.LazyQuicktime, error) {
 		fs, err := node.Fs.LazyFile(node.Path)
 
 		if err != nil {
-			return nil, fmt.Errorf("Something's went boom opening the HTTP Source!")
+			return nil, fmt.Errorf("Something went boom while opening the HTTP Source!")
 		}
 
 		//Logger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
-		lqt, err = lazyquicktime.LoadMovMetadata(fs)
+		lqt, err := lazyquicktime.LoadMovMetadata(fs)
 		if err != nil {
-			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
+			return nil, fmt.Errorf("Something went boom while storing the quicktime file: %s", err.Error())
 		}
 
 		//Logger.Log("msg", fmt.Sprintf("Updating metadata store for %s", fs.Path()))
-		cache.Cache[node.trimPath] = lqt
-		if err != nil {
-			return nil, fmt.Errorf("Something's went boom storing the quicktime file: %s", err.Error())
+		cache.Cache[node.trimPath] = &QTEntry{
+			lqt: lqt,
+			metadata: moovOutputMetadata{
+				FileSize:  lqt.FileSize(),
+				URL:       node.Path,
+				NumFrames: lqt.NumFrames(),
+				Duration:  lqt.Duration(),
+			},
 		}
 
+	} else {
+		Logger.Log("msg", fmt.Sprintf("lqt cache has entry for %s", node.Path))
 	}
 
-	return lqt, nil
+	return qte, nil
 }
 
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
@@ -90,18 +112,18 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 	// uri.Path += node.Path
 
 	metadataStart := time.Now()
-	lqt, err := qtCache.getLQT(node)
+	qte, err := qtCache.getLQT(node)
 	timeTrack(metadataStart, &timing.Metadata)
 
 	if err != nil {
 		Logger.Log("msg", err.Error())
 
-		b,_ := json.MarshalIndent(struct {
-							URL, Error string
-						}{
-							URL: node.Path,
-							Error: err.Error(),
-						}, "", "  ")
+		b, _ := json.MarshalIndent(struct {
+			URL, Error string
+		}{
+			URL:   node.Path,
+			Error: err.Error(),
+		}, "", "  ")
 
 		// http.Error(w, err.Error(), 500)
 		w.Write(b)
@@ -110,26 +132,16 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 
 	if len(path) == 0 {
 		// Leaf node
+		startEncode := time.Now()
 
 		Logger.Log("msg", fmt.Sprintf("Returning movie information for %s", node.Path))
 
-		// Temporary structure for JSON output
-		out := struct {
-			URL       string
-			NumFrames int
-			Duration  float32
-			FileSize  uint64
-		}{
-			URL:       node.Path,
-			NumFrames: lqt.NumFrames(),
-			Duration:  lqt.Duration(),
-			FileSize:  uint64(lqt.FileSize()),
-		}
-
-		b, err := json.MarshalIndent(out, "", "  ")
+		b, err := qte.metadata.MarshalJSON()
 		if err != nil {
 			fmt.Fprintln(w, "JSON error:", err)
 		}
+
+		timeTrack(startEncode, &timing.Encode)
 
 		//Logger.Log("msg", fmt.Sprintf("..... done"))
 
@@ -139,7 +151,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		// Handle any residual path elements (frames, etc) here
 		switch strings.ToLower(path[0]) {
 		case "frame":
-			extractFrame(node, lqt, path[1:], w, req, &timing)
+			extractFrame(node, qte.lqt, path[1:], w, req, &timing)
 		default:
 			http.Error(w, fmt.Sprintf("Didn't understand request \"%s\"", path[0]), 500)
 		}
@@ -147,7 +159,7 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 
 	timeTrack(movStart, &timing.Handler)
 
-	t, _ := json.Marshal(timing)
+	t, _ := timing.MarshalJSON()
 	Logger.Log("timing", t)
 
 	return nil

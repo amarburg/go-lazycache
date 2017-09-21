@@ -12,7 +12,7 @@ type DirListing struct {
 	Path        string
 	Files       []string
 	Directories []string
-	expires			time.Time
+	expires     time.Time
 }
 
 type DirMapStore struct {
@@ -43,7 +43,7 @@ func (cache *DirMapStore) getDirectory(node *Node) (*DirListing, error) {
 	listing, has := cache.Cache[cacheKey]
 
 	if has {
-		if time.Now().After( listing.expires ) {
+		if time.Now().After(listing.expires) {
 			has = false
 		}
 	}
@@ -56,7 +56,7 @@ func (cache *DirMapStore) getDirectory(node *Node) (*DirListing, error) {
 		//Logger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories)))
 
 		if err == nil {
-			listing.expires = time.Now().Add( CachedExpiration )
+			listing.expires = time.Now().Add(CachedExpiration)
 			//Logger.Log( "msg", fmt.Sprintf("Created cache entry for %s, current time is %s,  expires at %s", cacheKey, time.Now(), listing.expires.String() ))
 			cache.Cache[cacheKey] = listing
 		} else {
@@ -95,7 +95,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 		if child, ok := node.Children[path[0]]; ok && child != nil {
 			return child
 		} else {
-			http.Error(w, fmt.Sprintf("Can't find %s within %s", path[0], node.trimPath), 404)
+			http.Error(w, fmt.Sprintf("Can't find child %s within %s", path[0], node.trimPath), 404)
 		}
 
 	} else {
@@ -137,7 +137,5 @@ func (node *Node) BootstrapDirectory(listing DirListing) {
 		node.Children[f] = newNode
 
 		newNode.autodetectLeafFunc()
-
-		//fmt.Printf("Adding file %s to %s\n", f, node.Path)
 	}
 }
