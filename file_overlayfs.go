@@ -24,18 +24,17 @@ import (
 // }
 
 type FileOverlayFS struct {
-	fs 				FileSystem
-	path			string
-	Flatten			bool
+	fs      FileSystem
+	path    string
+	Flatten bool
 }
-
 
 func OpenFileOverlayFS(fs FileSystem, path string) (*FileOverlayFS, error) {
 
 	ofs := &FileOverlayFS{
-				fs: fs,
-				path: path,
-				Flatten: false,
+		fs:      fs,
+		path:    path,
+		Flatten: false,
 	}
 
 	return ofs, nil
@@ -46,7 +45,7 @@ func (fs *FileOverlayFS) OriginalPath(p string) string {
 }
 
 func (fs *FileOverlayFS) PathType(path string) int {
-	return fs.fs.PathType( path )
+	return fs.fs.PathType(path)
 }
 
 func (fs *FileOverlayFS) FileSource(p string) (lazyfs.FileSource, error) {
@@ -58,19 +57,19 @@ func (fs *FileOverlayFS) FileSource(p string) (lazyfs.FileSource, error) {
 		localFileName = p
 	}
 
-	localPath := filepath.Join( fs.path, localFileName )
+	localPath := filepath.Join(fs.path, localFileName)
 
 	Logger.Log("debug", fmt.Sprintf("Checking file overlay for %s", localPath))
 
-	_,err := os.Stat( localPath )
+	_, err := os.Stat(localPath)
 
 	if err != nil {
 		return fs.fs.FileSource(p)
 	}
 
-	Logger.Log("msg", fmt.Sprintf("Using %s as local overlay file for %s", localPath, p ) )
+	Logger.Log("msg", fmt.Sprintf("Using %s as local overlay file for %s", localPath, p))
 
-	return lazyfs.OpenLocalFile( localPath )
+	return lazyfs.OpenLocalFile(localPath)
 }
 
 // func (fs *HttpFS ) Open( path string ) (*HttpSource, error) {
