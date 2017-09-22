@@ -51,7 +51,9 @@ func (cache *DirMapStore) getDirectory(node *Node) (*DirListing, error) {
 	if !has {
 		//Logger.Log("msg", fmt.Sprintf("Need to update dir cache for %s", node.Path))
 		var err error
+		startTime := time.Now()
 		listing, err = node.Fs.ReadDir(node.Path)
+		Logger.Log("debug", fmt.Sprintf("Retrieving directory listing took %f", time.Since(startTime).Seconds()))
 
 		//Logger.Log("msg", fmt.Sprintf("Listing has %d files and %d directories", len(listing.Files), len(listing.Directories)))
 

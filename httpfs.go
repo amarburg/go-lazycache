@@ -1,11 +1,12 @@
 package lazycache
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/amarburg/go-lazyfs"
+	"github.com/valyala/fasthttp"
 	"golang.org/x/net/html"
-	"net/http"
 	"net/url"
 	"path"
 	"regexp"
@@ -21,7 +22,8 @@ type FileSystem interface {
 }
 
 type HttpFS struct {
-	Uri url.URL
+	Uri    url.URL
+	client fasthttp.Client
 }
 
 const (
@@ -72,14 +74,13 @@ func (fs *HttpFS) LazyFile(p string) (lazyfs.FileSource, error) {
 // }
 
 func (fs *HttpFS) ReadDir(p string) (*DirListing, error) {
-	client := http.Client{}
 
 	pathUri := fs.Uri
 	pathUri.Path += p
 
 	fmt.Printf("Querying directory: %s\n", pathUri.String())
 
-	response, err := client.Get(pathUri.String())
+	statusCode, body, err := fs.client.Get([]byte{}, pathUri.String())
 
 	listing := &DirListing{Path: p,
 		Files:       make([]string, 0),
@@ -90,12 +91,11 @@ func (fs *HttpFS) ReadDir(p string) (*DirListing, error) {
 
 	if err != nil {
 		return listing, err
-	} else if response.StatusCode != 200 {
-		return listing, errors.New(fmt.Sprintf("Got HTTP response %d", response.StatusCode))
+	} else if statusCode != 200 {
+		return listing, errors.New(fmt.Sprintf("Got HTTP response %d", statusCode))
 	}
 
-	defer response.Body.Close()
-	d := html.NewTokenizer(response.Body)
+	d := html.NewTokenizer(bytes.NewBuffer(body))
 
 	//fmt.Println(d)
 
