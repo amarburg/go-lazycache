@@ -9,6 +9,7 @@ build:
     - script:
         name: go get
         code: |
+          go get -u github.com/mailru/easyjson/...
           go get -t -tags integration github.com/amarburg/go-lazycache
 
 
@@ -18,6 +19,7 @@ build:
     - script:
         name: go build
         code: |
+          go generate
           go build .
 
     # Test the project
