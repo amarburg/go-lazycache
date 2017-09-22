@@ -10,3 +10,8 @@
 ## Todo
 
 [ ] Add integration test for extraction of .png, .jpg and no extension...
+
+
+## Benchmarking using curl
+
+    repeat 10 { curl -s -o /dev/null -w "%{time_total}\n" -H "Range: bytes=2615776240-2616368015" https://rawdata.oceanobservatories.org/files//RS03ASHS/PN03B/06-CAMHDA301/2017/09/21/CAMHDA301-20170921T211500.mov }
