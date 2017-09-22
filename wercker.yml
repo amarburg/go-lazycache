@@ -9,8 +9,8 @@ build:
     - script:
         name: go get
         code: |
-          go get -u github.com/mailru/easyjson/...
-          go get -t -tags integration github.com/amarburg/go-lazycache
+          go get -u -v github.com/mailru/easyjson/...
+          go get -d -v -t -tags integration github.com/amarburg/go-lazycache
 
 
     #- wercker/golint
