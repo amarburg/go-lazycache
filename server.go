@@ -12,6 +12,8 @@ import (
 	"github.com/amarburg/go-lazyfs"
 	"github.com/amarburg/go-lazyquicktime"
 	"github.com/amarburg/go-quicktime"
+
+	"github.com/spf13/viper"
 )
 
 const ApiVersion = "v1"
@@ -33,17 +35,29 @@ func AddMirror(serverAddr string) {
 		panic(fmt.Sprintf("Error opening HTTP FS Source: %s", err.Error()))
 	}
 
-	ofs, err := OpenFileOverlayFS(fs, "/Users/aaron/workspace/go/src/github.com/amarburg/go-lazycache/app/overlay")
-	ofs.Flatten = true
-
-	if err != nil {
-		panic(fmt.Sprintf("Error opening FileOverlay FS Source: %s", err.Error()))
-	}
-
 	// Reverse hostname
 	splitHN := MungeHostname(fs.Uri.Host)
 	root := fmt.Sprintf("/%s/%s%s", ApiVersion, strings.Join(splitHN, "/"), fs.Uri.Path)
-	MakeRootNode(ofs, root)
+
+	if len(viper.GetString("fileoverlay")) > 0 {
+		ofs, err := OpenFileOverlayFS(fs, viper.GetString("fileoverlay"))
+
+		if viper.GetBool("fileoverlay.flatten") {
+			ofs.Flatten = true
+		}
+
+		Logger.Log("msg", fmt.Sprintf("Adding fileoverlay at %s, flatten=%v",
+			viper.GetString("fileoverlay"), ofs.Flatten))
+
+		if err != nil {
+			panic(fmt.Sprintf("Error opening FileOverlay FS Source: %s", err.Error()))
+		}
+
+		MakeRootNode(ofs, root)
+
+	} else {
+		MakeRootNode(fs, root)
+	}
 }
 
 func InfoHandler(w http.ResponseWriter, req *http.Request) {

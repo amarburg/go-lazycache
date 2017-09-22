@@ -19,9 +19,13 @@ func ViperConfiguration() {
 	viper.SetDefault("directorystore", "")
 	viper.SetDefault("redishost", "localhost:6379")
 
+	viper.SetDefault("fileoverlay", "")
+	viper.SetDefault("fileoverlay.flatten", "")
+
 	viper.SetConfigName("lazycache")
 	viper.AddConfigPath("/etc/lazycache")
 	viper.AddConfigPath(".")
+
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		switch err.(type) {
@@ -44,6 +48,12 @@ func ViperConfiguration() {
 	flag.String("image-store-bucket", "camhd-image-cache", "Bucket used for Google image store")
 	flag.String("image-store-root", "", "Path to local image store directory (must be writable)")
 	flag.String("image-store-url", "", "Root URL for webserver which serves image store directory")
+
+	flag.String("file-overlay", "", "Path to local file overlay")
+	viper.BindPFlag("fileoverlay", flag.Lookup("file-overlay"))
+
+	flag.Bool("file-overlay-flatten", false, "Do flatten the file overlay")
+	viper.BindPFlag("fileoverlay.flatten", flag.Lookup("file-overlay-flatten"))
 
 	// flag.String("quicktime-store", "", "Type of quicktime store (none, redis)")
 	// flag.String("directory-store", "", "Type of directory store (none, redis)")
