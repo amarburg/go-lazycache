@@ -20,6 +20,8 @@ import "sync"
 
 import "github.com/amarburg/go-lazyquicktime"
 
+//import "github.com/amarburg/go-lazyfs"
+
 var leadingNumbers, _ = regexp.Compile("^\\d+")
 
 //go:generate easyjson -all $GOFILE
@@ -73,11 +75,16 @@ func (cache *QTStore) getLQT(node *Node) (*QTEntry, error) {
 		cache.Stats.Misses++
 
 		//Logger.Log("msg", fmt.Errorf("Initializing LazyFile to %s", node.Path))
-		fs, err := node.Fs.LazyFile(node.Path)
+		fs, err := node.Fs.FileSource(node.Path)
 
 		if err != nil {
 			return nil, fmt.Errorf("Something went boom while opening the HTTP Source!")
 		}
+
+		//block, err := lazyfs.OpenBlockStore( fs, 20 )
+		// if err != nil {
+		// 	return nil, fmt.Errorf("Something went boom while opening the HTTP Source!")
+		// }
 
 		//Logger.Log("msg", fmt.Sprintf("Need to pull quicktime information for %s", fs.Path()))
 		lqt, err := lazyquicktime.LoadMovMetadata(fs)

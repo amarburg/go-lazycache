@@ -18,7 +18,7 @@ type FileSystem interface {
 	PathType(path string) int
 	ReadDir(p string) (*DirListing, error)
 	OriginalPath(p string) string
-	LazyFile(p string) (lazyfs.FileSource, error)
+	FileSource(p string) (lazyfs.FileSource, error)
 }
 
 type HttpFS struct {
@@ -61,7 +61,7 @@ func (fs *HttpFS) OriginalPath(p string) string {
 	return url.String()
 }
 
-func (fs *HttpFS) LazyFile(p string) (lazyfs.FileSource, error) {
+func (fs *HttpFS) FileSource(p string) (lazyfs.FileSource, error) {
 	lazy, err := lazyfs.OpenHttpSource(fs.OriginalUri(p))
 	return lazy, err
 }
