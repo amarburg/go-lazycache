@@ -11,6 +11,7 @@ import "io"
 import "encoding/json"
 import "github.com/amarburg/go-fast-png"
 import "image/jpeg"
+import "golang.org/x/image/bmp"
 import "bytes"
 import "regexp"
 import "time"
@@ -202,6 +203,9 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 	var contentType string
 
 	switch extension {
+	case ".bmp":
+		contentType = "image/bmp"
+		extension = ".bmp"
 	case ".jpg", ".jpeg":
 		contentType = "image/jpeg"
 		extension = ".jpg"
@@ -220,7 +224,6 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 		Logger.Log("msg", fmt.Sprintf("Image %s exists in the Image store at %s", UUID, url))
 		// Set Content-Type or response
 		w.Header().Set("Content-Type", contentType)
-		// w.Header().Set("Location", url)
 		Logger.Log("msg", fmt.Sprintf("Redirecting to %s", url))
 		http.Redirect(w, req, url, http.StatusTemporaryRedirect)
 
@@ -241,11 +244,13 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 		switch contentType {
 		case "image/png":
 			encoder := fastpng.Encoder{
-				CompressionLevel: fastpng.DefaultCompression,
+				CompressionLevel: fastpng.BestSpeed,
 			}
 			err = encoder.Encode(buffer, img)
 		case "image/jpeg":
 			err = jpeg.Encode(buffer, img, &jpeg.Options{Quality: jpeg.DefaultQuality})
+		case "image/bmp":
+			err = bmp.Encode(buffer, img)
 		}
 
 		timeTrack(startEncode, &timing.Encode)
