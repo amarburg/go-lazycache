@@ -3,12 +3,25 @@
 task :default => :build
 
 desc "Build a \"production\" Docker image from Github source"
-task :build do
+task :build => "Dockerfile" do
   sh "docker build --tag lazycache:latest ."
 end
 
 namespace :run do
-  task :local do
-    sh "docker run --rm --publish 8080:8080 lazycache:latest"
+
+  ## Running -t -i will run it attached,
+  base_docker_args = "docker run --rm -t -i --publish 8080:8080"
+  base_docker_cmd  = "lazycache:latest"
+
+  task :local => :build  do
+    sh [base_docker_args, base_docker_cmd].join(' ')
   end
+
+  task :overlay => :build do
+    sh [base_docker_args,
+        "--volume=/Users/aaron/workspace/go/src/github.com/amarburg/go-lazycache/app/overlay:/srv/overlay",
+        base_docker_cmd,
+        "--file-overlay /srv/overlay --file-overlay-flatten"].join(' ')
+  end
+
 end
