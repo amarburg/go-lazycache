@@ -24,6 +24,8 @@ namespace :prod do
   end
 
   task :deploy  do
+    ## Use the common Dockerfile
+    sh "cp ../docker/Dockerfile nocache/"
     sh "gcloud --project=#{config.name} app deploy --stop-previous-version nocache/app.yaml"
   end
 
@@ -47,6 +49,7 @@ namespace :dev do
   end
 
   task :deploy  do
+    sh "cp ../docker/Dockerfile nocache/"
     sh "gcloud --project=#{config.name} app deploy --stop-previous-version nocache/app.yaml"
   end
 
@@ -57,7 +60,7 @@ namespace :dev do
 end
 
 
-
+## Installs the "forwarder" app to our legacy app endpoints
 namespace :forwarder do
 
   configs = [ GCloudConfig.new( 'camhd-app-dev-nocache' ),
