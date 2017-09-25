@@ -39,6 +39,15 @@ namespace :run do
     --bind 127.0.0.1 )
   end
 
+  task :overlay => :build do
+    sh *%w( ./lazycache
+    --port 8080
+    --bind 127.0.0.1
+    --file-overlay /Users/aaron/workspace/go/src/github.com/amarburg/go-lazycache/app/overlay
+    --file-overlay-flatten )
+
+  end
+
   task :google_store => :build do
     sh(*%w( ./lazycache
             --port 8080
