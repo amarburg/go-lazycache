@@ -11,12 +11,4 @@ namespace :run do
   task :local do
     sh "docker run --rm --publish 8080:8080 lazycache:latest"
   end
-
-  task :image_store do
-    ## TBD.
-    # ENV LAZYCACHE_PORT=8080 \
-    # LAZYCACHE_IMAGESTORE=local  \
-    # LAZYCACHE_IMAGESTORE_ROOT=/srv/image_store \
-    # LAZYCACHE_IMAGESTORE_URL="http://localhost:9082/"
-  end
 end
