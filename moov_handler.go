@@ -28,6 +28,9 @@ var leadingNumbers, _ = regexp.Compile("^\\d+")
 // I've isolated these structs so I can use ffjson
 
 type MoovHandlerTiming struct {
+	// Don't export start times, so they don't get JSON-encoded
+	// Todo, I could clean up this API a bit...
+	handlerStart                          time.Time
 	Handler, Metadata, Extraction, Encode time.Duration
 }
 
@@ -115,8 +118,9 @@ func (cache *QTStore) getLQT(node *Node) (*QTEntry, error) {
 func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Request) *Node {
 	Logger.Log("msg", fmt.Sprintf("Quicktime handler: %s with residual path (%d): (%s)", node.Path, len(path), strings.Join(path, ":")))
 
-	timing := MoovHandlerTiming{}
-	movStart := time.Now()
+	timing := MoovHandlerTiming{
+		handlerStart: time.Now(),
+	}
 
 	// uri := node.Fs.Uri
 	// uri.Path += node.Path
@@ -135,7 +139,6 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 			Error: err.Error(),
 		}, "", "  ")
 
-		// http.Error(w, err.Error(), 500)
 		w.Write(b)
 		return nil
 	}
@@ -152,8 +155,10 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 		}
 
 		timeTrack(startEncode, &timing.Encode)
+		timeTrack(timing.handlerStart, &timing.Handler)
 
-		//Logger.Log("msg", fmt.Sprintf("..... done"))
+		w.Header().Set("X-lazycache-timing-handler-ns", strconv.Itoa(int(timing.Handler.Nanoseconds())))
+		w.Header().Set("X-lazycache-timing-metadata-ns", strconv.Itoa(int(timing.Metadata.Nanoseconds())))
 
 		w.Write(b)
 	} else {
@@ -166,8 +171,6 @@ func MoovHandler(node *Node, path []string, w http.ResponseWriter, req *http.Req
 			http.Error(w, fmt.Sprintf("Didn't understand request \"%s\"", path[0]), 500)
 		}
 	}
-
-	timeTrack(movStart, &timing.Handler)
 
 	t, _ := timing.MarshalJSON()
 	Logger.Log("timing", t)
@@ -290,6 +293,14 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 
 		// write image to Image store
 		ImageCache.Store(UUID, imgReader)
+
+		timeTrack(timing.handlerStart, &timing.Handler)
+
+		// Add timing information to HTTP Header
+		w.Header().Set("X-lazycache-timing-handler-ns", strconv.Itoa(int(timing.Handler.Nanoseconds())))
+		w.Header().Set("X-lazycache-timing-metadata-ns", strconv.Itoa(int(timing.Metadata.Nanoseconds())))
+		w.Header().Set("X-lazycache-timing-extraction-ns", strconv.Itoa(int(timing.Extraction.Nanoseconds())))
+		w.Header().Set("X-lazycache-timing-encode-ns", strconv.Itoa(int(timing.Encode.Nanoseconds())))
 
 		imgReader.Seek(0, io.SeekStart)
 		_, err = imgReader.WriteTo(w)
