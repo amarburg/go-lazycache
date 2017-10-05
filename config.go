@@ -71,6 +71,9 @@ func ViperConfiguration() {
 	//viper.BindPFlag("quicktimestore", flag.Lookup("quicktime-store"))
 	viper.BindPFlag("redishost", flag.Lookup("redis-host"))
 
+	flag.Bool("allow-raw-output", false, "Allow images to be output as raw bytestrings using PIL.Image.tobytes()")
+	viper.BindPFlag("allow-raw-output", flag.Lookup("allow-raw-output"))
+
 	flag.Parse()
 }
 
