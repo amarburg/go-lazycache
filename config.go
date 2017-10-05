@@ -40,7 +40,7 @@ func ViperConfiguration() {
 	viper.SetEnvPrefix("lazycache")
 	viper.AutomaticEnv()
 	// Convert '.' to '_' in configuration variable names
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".-", "_"))
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 
 	flag.Int("port", 80, "Network port to listen on (default: 8080)")
 	flag.String("bind", "0.0.0.0", "Network interface to bind to (defaults to 0.0.0.0)")
@@ -97,11 +97,6 @@ func ConfigureImageStoreFromViper() {
 
 func ConfigureFromViper() {
 	ViperConfiguration()
-
-	for _, e := range os.Environ() {
-			pair := strings.Split(e, "=")
-			fmt.Println(pair[0])
-	}
 
 	Logger.Log("msg", "In ConfigureFromViper")
 	ConfigureImageStoreFromViper()
