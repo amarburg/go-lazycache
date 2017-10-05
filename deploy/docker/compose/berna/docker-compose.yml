@@ -7,5 +7,6 @@ services:
     volumes:
       - /data:/srv/overlay:ro
     environment:
-      LAZYCACHE_FILEOVERLAY: /srv/data
+      LAZYCACHE_FILEOVERLAY: /srv/overlay
       LAZYCACHE_FILEOVERLAY_FLATTEN: 1
+      LAZYCACHE_ALLOW_RAW_OUTPUT: 1

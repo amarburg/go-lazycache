@@ -4,7 +4,7 @@ task :default => :build
 
 desc "Build a \"production\" Docker image from Github source"
 task :build => "Dockerfile" do
-  sh "docker build --tag lazycache:latest ."
+  sh "docker build --no-cache --tag lazycache:latest ."
 end
 
 namespace :run do

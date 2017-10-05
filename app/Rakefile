@@ -43,6 +43,7 @@ namespace :run do
     sh *%w( ./lazycache
     --port 8080
     --bind 0.0.0.0
+    --allow-raw-output
     --file-overlay /Users/aaron/workspace/go/src/github.com/amarburg/go-lazycache/app/overlay
     --file-overlay-flatten )
 

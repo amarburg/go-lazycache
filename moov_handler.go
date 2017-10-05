@@ -1,22 +1,22 @@
 package lazycache
 
-import "fmt"
-import "net/http"
-import "strings"
-import "strconv"
-import "path/filepath"
-
-//import "strings"
-import "io"
-import "encoding/json"
-import "github.com/amarburg/go-fast-png"
-import "image/jpeg"
-import "golang.org/x/image/bmp"
-import "bytes"
-import "regexp"
-import "time"
-
-import "sync"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"github.com/amarburg/go-fast-png"
+	"github.com/spf13/viper"
+	"golang.org/x/image/bmp"
+	"image/jpeg"
+	"io"
+	"net/http"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+)
 
 import "github.com/amarburg/go-lazyquicktime"
 
@@ -219,6 +219,9 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 	case "", ".png":
 		extension = ".png"
 		contentType = "image/png"
+	case ".rgba", ".raw":
+		extension = ".rgba"
+		contentType = "image/x-raw-rgba"
 	default:
 		http.Error(w, fmt.Sprintf("Unknown image extension \"%s\"", extension), 500)
 		return
@@ -244,27 +247,46 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 		}
 		timeTrack(startExt, &timing.Extraction)
 
-		buffer := new(bytes.Buffer)
-
 		startEncode := time.Now()
+
+		var imgReader *bytes.Reader
 
 		switch contentType {
 		case "image/png":
-			encoder := fastpng.Encoder{
-				CompressionLevel: fastpng.BestSpeed,
-			}
+			// TODO, allow configuration of PNGs
+			// {
+			// 	CompressionLevel: fastpng.BestSpeed,
+			// }
+
+			buffer := new(bytes.Buffer)
+			encoder := new(fastpng.Encoder)
 			err = encoder.Encode(buffer, img)
+			imgReader = bytes.NewReader(buffer.Bytes())
+
 		case "image/jpeg":
+			buffer := new(bytes.Buffer)
 			err = jpeg.Encode(buffer, img, &jpeg.Options{Quality: jpeg.DefaultQuality})
+			imgReader = bytes.NewReader(buffer.Bytes())
+
 		case "image/bmp":
+			buffer := new(bytes.Buffer)
 			err = bmp.Encode(buffer, img)
+			imgReader = bytes.NewReader(buffer.Bytes())
+
+		case "image/x-raw-rgba":
+			if viper.GetBool("allow-raw-output") {
+				// stand-in
+				//buffer = img.Pix
+				imgReader = bytes.NewReader(img.Pix)
+			} else {
+				http.Error(w, "This server is not configured to produce raw output.", 500)
+				return
+			}
 		}
 
 		timeTrack(startEncode, &timing.Encode)
 
-		Logger.Log("debug", fmt.Sprintf("%s size %d MB\n", contentType, buffer.Len()/(1024*1024)))
-
-		imgReader := bytes.NewReader(buffer.Bytes())
+		//Logger.Log("debug", fmt.Sprintf("%s size %d MB\n", contentType, buffer.Len()/(1024*1024)))
 
 		// write image to Image store
 		ImageCache.Store(UUID, imgReader)

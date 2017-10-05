@@ -39,7 +39,7 @@ func ViperConfiguration() {
 	viper.SetEnvPrefix("lazycache")
 	viper.AutomaticEnv()
 	// Convert '.' to '_' in configuration variable names
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".-", "_"))
 
 	flag.Int("port", 80, "Network port to listen on (default: 8080)")
 	flag.String("bind", "0.0.0.0", "Network interface to bind to (defaults to 0.0.0.0)")
@@ -71,6 +71,9 @@ func ViperConfiguration() {
 	//viper.BindPFlag("quicktimestore", flag.Lookup("quicktime-store"))
 	viper.BindPFlag("redishost", flag.Lookup("redis-host"))
 
+	flag.Bool("allow-raw-output", false, "Allow images to be output as raw bytestrings using PIL.Image.tobytes()")
+	viper.BindPFlag("allow-raw-output", flag.Lookup("allow-raw-output"))
+
 	flag.Parse()
 }
 
@@ -96,4 +99,8 @@ func ConfigureFromViper() {
 
 	Logger.Log("msg", "In ConfigureFromViper")
 	ConfigureImageStoreFromViper()
+
+	if viper.GetBool("allow-raw-output") {
+		Logger.Log("msg", "Raw image output enabled.")
+	}
 }
