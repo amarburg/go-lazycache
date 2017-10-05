@@ -36,13 +36,13 @@ namespace :run do
   task :local => :build do
     sh *%w( ./lazycache
     --port 8080
-    --bind 127.0.0.1 )
+    --bind 0.0.0.0 )
   end
 
   task :overlay => :build do
     sh *%w( ./lazycache
     --port 8080
-    --bind 127.0.0.1
+    --bind 0.0.0.0
     --file-overlay /Users/aaron/workspace/go/src/github.com/amarburg/go-lazycache/app/overlay
     --file-overlay-flatten )
 
@@ -81,30 +81,6 @@ namespace :run do
             --image-local-root #{tmp_image_store} \
             --image-url-root file://#{tmp_image_store} \
             --bind 127.0.0.1"
-  end
-
-end
-
-
-namespace :docker do
-
-  namespace :local do
-    tag = "lazycache-app-local:latest"
-
-    task :build => "test" do
-      sh(*%W( docker build --no-cache --tag #{tag} . ))
-    end
-
-    task :run => :build do
-      sh(*%W( docker run --rm --attach STDOUT --attach STDERR
-      --publish 8080:8080
-      --env LAZYCACHE_IMAGESTORE=local
-      --env LAZYCACHE_IMAGESTORE_LOCALROOT=/srv/image_store
-      --env LAZYCACHE_IMAGESTORE_URLROOT=file:///tmp/image_store
-      --volume /tmp/image_store:/srv/image_store
-      #{tag} ))
-    end
-
   end
 
 end
