@@ -1,12 +1,12 @@
 version: '3'
 services:
   lazycache:
-    build: ../
+    build: ../../
     ports:
       - "8080:8080"
     volumes:
       - /data:/srv/overlay
     environment:
-      - LAZYCACHE_FILEOVERLAY: /srv/overlay
-      - LAZYCACHE_FILEOVERLAY_FLATTEN: 1
-      - LAZYCACHE_ALLOW_RAW_OUTPUT: 1
+      LAZYCACHE_FILEOVERLAY: /srv/overlay
+      LAZYCACHE_FILEOVERLAY_FLATTEN: 1
+      LAZYCACHE_ALLOW_RAW_OUTPUT: 1
