@@ -279,7 +279,7 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 				//buffer = img.Pix
 				imgReader = bytes.NewReader(img.Pix)
 			} else {
-				http.Error(w, "This server is not configured to produce raw output.", 500)
+				http.Error(w, "This server is not configured to produce raw output.", 501)
 				return
 			}
 		}
