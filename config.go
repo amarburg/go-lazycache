@@ -99,4 +99,8 @@ func ConfigureFromViper() {
 
 	Logger.Log("msg", "In ConfigureFromViper")
 	ConfigureImageStoreFromViper()
+
+	if viper.GetBool("allow-raw-output") {
+		Logger.Log("msg", "Raw image output enabled.")
+	}
 }
