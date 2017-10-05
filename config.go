@@ -5,6 +5,7 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"strings"
+	"os"
 )
 
 func ViperConfiguration() {
@@ -96,6 +97,11 @@ func ConfigureImageStoreFromViper() {
 
 func ConfigureFromViper() {
 	ViperConfiguration()
+
+	for _, e := range os.Environ() {
+			pair := strings.Split(e, "=")
+			fmt.Println(pair[0])
+	}
 
 	Logger.Log("msg", "In ConfigureFromViper")
 	ConfigureImageStoreFromViper()
