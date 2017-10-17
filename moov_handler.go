@@ -20,13 +20,11 @@ import (
 
 import "github.com/amarburg/go-lazyquicktime"
 
-//import "github.com/amarburg/go-lazyfs"
-
 var leadingNumbers, _ = regexp.Compile("^\\d+")
 
-//go:generate easyjson -all $GOFILE
-// I've isolated these structs so I can use ffjson
+//go:generate $GOPATH/bin/easyjson -all $GOFILE
 
+// MoovHandlerTiming
 type MoovHandlerTiming struct {
 	// Don't export start times, so they don't get JSON-encoded
 	// Todo, I could clean up this API a bit...
@@ -243,7 +241,7 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 	} else {
 
 		startExt := time.Now()
-		img, err := qte.lqt.ExtractFrame(frameNum)
+		img, err := qte.lqt.ExtractNRGBA(frameNum)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error generating image for frame %d: %s", frameNum, err.Error()), 500)
 			return
