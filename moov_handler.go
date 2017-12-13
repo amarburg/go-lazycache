@@ -34,8 +34,8 @@ type MoovHandlerTiming struct {
 
 type moovOutputMetadata struct {
 	URL       string
-	NumFrames int
-	Duration  float32
+	NumFrames uint64
+	Duration  float64
 	FileSize  int64
 }
 
@@ -100,7 +100,7 @@ func (cache *QTStore) getLQT(node *Node) (*QTEntry, error) {
 				FileSize:  lqt.FileSize,
 				URL:       node.Path,
 				NumFrames: lqt.NumFrames(),
-				Duration:  lqt.Duration(),
+				Duration:  lqt.Duration().Seconds(),
 			},
 		}
 
@@ -195,7 +195,7 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 		return
 	}
 
-	if frameNum > qte.metadata.NumFrames {
+	if uint64(frameNum) > qte.metadata.NumFrames {
 		http.Error(w, fmt.Sprintf("Requested frame %d in movie of length %d frames", frameNum, qte.metadata.NumFrames), 400)
 		return
 	}
@@ -241,7 +241,7 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 	} else {
 
 		startExt := time.Now()
-		img, err := qte.lqt.ExtractNRGBA(frameNum)
+		img, err := qte.lqt.ExtractNRGBA(uint64(frameNum))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error generating image for frame %d: %s", frameNum, err.Error()), 500)
 			return
