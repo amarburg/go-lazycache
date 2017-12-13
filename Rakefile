@@ -35,7 +35,7 @@ end
 
 namespace :docker do
   task :build do
-    sh "docker build -f Dockerfile --tag lazycache:dev ."
+    sh "docker build --file deploy/docker/Dockerfile --tag lazycache:dev ."
   end
 
   task :run do
