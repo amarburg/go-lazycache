@@ -74,6 +74,9 @@ func ViperConfiguration() {
 	flag.Bool("allow-raw-output", false, "Allow images to be output as raw bytestrings using PIL.Image.tobytes()")
 	viper.BindPFlag("allow-raw-output", flag.Lookup("allow-raw-output"))
 
+	flag.Bool("public", false, "Set public mode")
+	viper.BindPFlag("public", flag.Lookup("public"))
+
 	flag.Parse()
 }
 
@@ -102,5 +105,9 @@ func ConfigureFromViper() {
 
 	if viper.GetBool("allow-raw-output") {
 		Logger.Log("msg", "Raw image output enabled.")
+	}
+
+	if viper.GetBool("public") {
+		Logger.Log("msg", "Enabled public server mode.")
 	}
 }

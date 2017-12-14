@@ -254,13 +254,19 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 
 		switch contentType {
 		case "image/png":
+
+			buffer := new(bytes.Buffer)
+			encoder := new(fastpng.Encoder)
+
 			// TODO, allow configuration of PNGs
+			if viper.GetBool("public") {
+				encoder.CompressionLevel = fastpng.BestCompression
+			}
+
 			// {
 			// 	CompressionLevel: fastpng.BestSpeed,
 			// }
 
-			buffer := new(bytes.Buffer)
-			encoder := new(fastpng.Encoder)
 			err = encoder.Encode(buffer, img)
 			imgReader = bytes.NewReader(buffer.Bytes())
 

@@ -2,6 +2,7 @@ package lazycache
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"net/http"
 	"strings"
 	"time"
@@ -35,6 +36,10 @@ func (root RootNode) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Sanitive the input URL
 	shortPath := strings.TrimPrefix(req.URL.Path, root.node.trimPath)
 	elements := stripBlankElementsRight(strings.Split(shortPath, "/"))
+
+	if viper.GetBool("public") {
+		w.Header().Add("X-lazycache-public", "1")
+	}
 
 	// Launch into the tree
 	root.Handle(root.node, elements, w, req)
