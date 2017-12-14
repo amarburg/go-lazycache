@@ -1,4 +1,0 @@
-application:
-dispatch:
-  - url: "*/*"
-    service: default
