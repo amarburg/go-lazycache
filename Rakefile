@@ -1,8 +1,14 @@
 
 task :default => :test
 
-task :build do
-  sh( *%w( go build ))
+task :easyjson do
+  sh "go get -u github.com/mailru/easyjson/..."
+end
+
+task :build => :easyjson do
+  sh "go get -v"
+  sh "easyjson -all moov_handler.go"
+  sh "go build"
 end
 
 task :gofmt do
@@ -18,15 +24,19 @@ task :test => "test:short"
 namespace :test do
   task :all => ["test:integration","test:redis"]
 
-  task :short => :build do
+  task :deps do
+    sh "go get -t"
+  end
+
+  task :short => [:build, "test:deps"] do
       sh "go test -v"
   end
 
-  task :integration => :build do
+  task :integration => [:build, "test:deps"] do
       sh "go test -v -tags integration"
   end
 
-  task :redis => :build do
+  task :redis => [:build, "test:deps"] do
       sh "go test -v -tags redis"
   end
 
