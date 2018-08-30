@@ -108,7 +108,7 @@ func HandleDirectory(node *Node, path []string, w http.ResponseWriter, req *http
 
 		b, err := json.MarshalIndent(listing, "", "  ")
 		if err != nil {
-			Logger.Log("level", "error", "msg", fmt.Sprintf("JSON error:", err))
+			Logger.Log("level", "error", "msg", fmt.Sprintf("JSON error: %s", err))
 		}
 
 		addCacheDefeatHeaders(w)

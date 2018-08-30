@@ -53,7 +53,9 @@ func (store GoogleImageStore) Store(key string, data io.Reader) {
 	_, err := obj.Update(store.ctx, storage.ObjectAttrsToUpdate{
 		ContentDisposition: "attachment",
 		ACL: []storage.ACLRule{
-			{storage.AllUsers, storage.RoleReader},
+			storage.ACLRule{ Entity: storage.AllUsers,
+											 Role: storage.RoleReader,
+			},
 		},
 	})
 	if err != nil {
