@@ -7,6 +7,12 @@ task :build => "Dockerfile" do
   sh "docker build --no-cache --tag lazycache:latest ."
 end
 
+task :push do
+  sh "docker tag lazycache:latest amarburg/go-lazycache:latest"
+  sh "docker push amarburg/go-lazycache:latest"
+end
+
+
 namespace :run do
 
   ## Running -t -i will run it attached,
