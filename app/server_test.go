@@ -160,7 +160,6 @@ func TestOOIRootImageDecodeScaleQuery(t *testing.T) {
 	req, err := http.NewRequest("GET", "http://127.0.0.1:12345/v1/org/oceanobservatories/rawdata/files/RS03ASHS/PN03B/06-CAMHDA301/2016/07/24/CAMHDA301-20160724T030000Z.mov/frame/5000?width=128&height=128", nil)
 
 	resp, err := client.Do(req)
-	//resp,err := http.Get("http://127.0.0.1:12345/v1/localhost:9081/RS03ASHS/PN03B/06-CAMHDA301/2016/07/24/CAMHDA301-20160724T030000Z.mov/frame/1000")
 	defer resp.Body.Close()
 
 	if err != nil {
