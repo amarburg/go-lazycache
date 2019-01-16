@@ -249,19 +249,35 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 		}
 		timeTrack(startExt, &timing.Extraction)
 
+		query := req.URL.Query()
 
-		// Check HTTP header for scale information
-		widthStr := req.Header.Get("X-lazycache-output-width")
-		heightStr := req.Header.Get("X-lazycache-output-height")
+		widthStr, widthValid := query["width"]
+		heightStr, heightValid := query["height"]
 
-		if( len(widthStr) > 0 && len(heightStr) > 0 ) {
+		if( widthValid && heightValid ) {
 
-			width, _ := strconv.Atoi(widthStr)
-			height, _ := strconv.Atoi(heightStr)
+			width, _ := strconv.Atoi(widthStr[0])
+			height, _ := strconv.Atoi(heightStr[0])
 
+			Logger.Log("msg", fmt.Sprintf("Resizing to %d x %d", width, height))
 			resized := imaging.Resize(img, width, height, imaging.Lanczos)
 			img = resized
 
+		} else {
+
+			// Check HTTP header for scale information
+			hdrWidth := req.Header.Get("X-lazycache-output-width")
+			hdrHeight := req.Header.Get("X-lazycache-output-height")
+
+			if( len(hdrWidth) > 0 && len(hdrHeight) > 0 ) {
+
+				width, _ := strconv.Atoi(hdrWidth)
+				height, _ := strconv.Atoi(hdrHeight)
+
+				Logger.Log("msg", fmt.Sprintf("Resizing to %d x %d", width, height))
+				resized := imaging.Resize(img, width, height, imaging.Lanczos)
+				img = resized
+			}
 		}
 
 		startEncode := time.Now()
