@@ -7,6 +7,7 @@ import (
 	"github.com/amarburg/go-fast-png"
 	"github.com/spf13/viper"
 	"golang.org/x/image/bmp"
+ 	"github.com/disintegration/imaging"
 	"image/jpeg"
 	"io"
 	"net/http"
@@ -247,6 +248,21 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 			return
 		}
 		timeTrack(startExt, &timing.Extraction)
+
+
+		// Check HTTP header for scale information
+		widthStr := req.Header.Get("X-lazycache-output-width")
+		heightStr := req.Header.Get("X-lazycache-output-height")
+
+		if( len(widthStr) > 0 && len(heightStr) > 0 ) {
+
+			width, _ := strconv.Atoi(widthStr)
+			height, _ := strconv.Atoi(heightStr)
+
+			resized := imaging.Resize(img, width, height, imaging.Lanczos)
+			img = resized
+
+		}
 
 		startEncode := time.Now()
 

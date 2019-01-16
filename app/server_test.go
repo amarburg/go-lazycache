@@ -117,3 +117,36 @@ func TestOOIRootImageDecode(t *testing.T) {
 
 	// Other image checks
 }
+
+
+
+func TestOOIRootImageDecodeScale(t *testing.T) {
+	server := RunOOIServer("127.0.0.1", 12345)
+	defer server.Stop()
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", "http://127.0.0.1:12345/v1/org/oceanobservatories/rawdata/files/RS03ASHS/PN03B/06-CAMHDA301/2016/07/24/CAMHDA301-20160724T030000Z.mov/frame/5000", nil)
+	req.Header.Add("X-lazycache-output-width", "128")
+	req.Header.Add("X-lazycache-output-height", "128")
+
+	resp, err := client.Do(req)
+	//resp,err := http.Get("http://127.0.0.1:12345/v1/localhost:9081/RS03ASHS/PN03B/06-CAMHDA301/2016/07/24/CAMHDA301-20160724T030000Z.mov/frame/1000")
+	defer resp.Body.Close()
+
+	if err != nil {
+		t.Errorf("Error retrieving image: %s", err.Error())
+	}
+
+	img, err := png.Decode(resp.Body)
+
+	if err != nil {
+		t.Errorf("Error decoding image: %s", err.Error())
+	}
+
+	if img.Bounds().Dx() != 128 || img.Bounds().Dy() != 128 {
+		t.Errorf("Extracted image not expected size (was %d x %d)", img.Bounds().Dx(), img.Bounds().Dy())
+	}
+
+	// Other image checks
+}
