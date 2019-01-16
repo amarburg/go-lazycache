@@ -254,7 +254,6 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 		widthStr, widthValid := query["width"]
 		heightStr, heightValid := query["height"]
 
-		Logger.Log("msg", fmt.Sprintf("width = %s, height = %s", widthStr, heightStr))
 
 		if( widthValid && heightValid ) {
 
@@ -264,6 +263,11 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 			Logger.Log("msg", fmt.Sprintf("Resizing to %d x %d", width, height))
 			resized := imaging.Resize(img, width, height, imaging.Lanczos)
 			img = resized
+
+		} else if( widthValid || heightValid ) {
+
+			http.Error(w, fmt.Sprintf("Both width and height must be specified.  Got width = %s and height = %s ", widthStr, heightStr), 500)
+			return
 
 		} else {
 
