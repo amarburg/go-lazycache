@@ -254,6 +254,8 @@ func extractFrame(node *Node, qte *QTEntry, path []string, w http.ResponseWriter
 		widthStr, widthValid := query["width"]
 		heightStr, heightValid := query["height"]
 
+		Logger.Log("msg", fmt.Sprintf("width = %s, height = %s", widthStr, heightStr))
+
 		if( widthValid && heightValid ) {
 
 			width, _ := strconv.Atoi(widthStr[0])
